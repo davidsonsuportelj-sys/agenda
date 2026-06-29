@@ -1,0 +1,16 @@
+from supabase import create_client
+
+# Coloque seus dados do Supabase aqui
+url = "https://oeqqjyhgtrfexbsaufuo.supabase.co/rest/v1/"
+key = "sb_publishable_WV3acm1S8cRtgdzeSLGjKQ_GJA58uZr"
+supabase = create_client(url, key)
+
+# Para salvar um novo agendamento:
+def salvar_no_supabase(nome, servico, horario):
+    dados = {"cliente": nome, "servico": servico, "horario": horario}
+    supabase.table("agendamentos").insert(dados).execute()
+
+# Para ler os agendamentos:
+def ler_do_supabase():
+    resposta = supabase.table("agendamentos").select("*").execute()
+    return resposta.data

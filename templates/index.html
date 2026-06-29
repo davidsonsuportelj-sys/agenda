@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Agenda de Agendamentos</h1>
+    <form action="/agendar" method="POST">
+        <input type="text" name="nome" placeholder="Seu nome" required>
+        <input type="time" name="horario" required>
+        <button type="submit">Agendar</button>
+    </form>
+    <h2>Horários Marcados:</h2>
+    <ul>
+        {% for ag in agenda %}
+            <li>{{ ag[1] }} - {{ ag[0] }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
