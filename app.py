@@ -1,15 +1,19 @@
+import os
 from flask import Flask, render_template, request, redirect
 from supabase import create_client
-import os
+from dotenv import load_dotenv
+
+# Carrega as variáveis do arquivo .env
+load_dotenv()
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO DO SUPABASE ---
-# Cole aqui sua URL e sua Chave (mantendo as aspas)
-url = "https://oeqqjyhgtrfexbsaufuo.supabase.co/rest/v1/"
-key = "sb_publishable_WV3acm1S8cRtgdzeSLGjKQ_GJA58uZr"
+# --- CONFIGURAÇÃO SEGURA DO SUPABASE ---
+# O sistema buscará as chaves do arquivo .env localmente
+# ou das Variáveis de Ambiente configuradas no Render
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
 
-# Inicializa o cliente do Supabase
 supabase = create_client(url, key)
 
 @app.route('/')
@@ -40,5 +44,5 @@ def agendar():
     return redirect('/')
 
 if __name__ == '__main__':
-    # O host 0.0.0.0 é obrigatório para o Render acessar seu app
+    # Host e porta para rodar no Render
     app.run(host='0.0.0.0', port=5000)
