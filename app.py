@@ -4,11 +4,11 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
-# Carrega variáveis do .env (apenas para ambiente local)
+# Carrega variáveis do ambiente local (quando rodando no seu PC)
 load_dotenv()
 
 app = Flask(__name__)
-# Chave secreta necessária para as sessões de login
+# Chave secreta para a sessão de login
 app.secret_key = os.getenv("SECRET_KEY", "uma_chave_muito_segura_para_sessao")
 
 login_manager = LoginManager()
@@ -38,15 +38,24 @@ def login():
         username_input = request.form.get('username')
         password_input = request.form.get('password')
         
-        # Verifica credenciais na tabela 'usuarios' do Supabase
-        response = supabase.table("usuarios").select("*").eq("username", username_input).eq("password", password_input).execute()
+        # LOG DE DEBUG: Isso aparecerá nos Logs do Render
+        print(f"DEBUG: Tentando login. Usuário enviado: '{username_input}', Senha: '{password_input}'")
         
-        if response.data:
-            user = User(username_input)
-            login_user(user)
-            return redirect(url_for('index'))
-        else:
-            flash('Usuário ou senha inválidos!')
+        # Verifica credenciais na tabela 'usuarios' do Supabase
+        try:
+            response = supabase.table("usuarios").select("*").eq("username", username_input).eq("password", password_input).execute()
+            
+            if response.data:
+                print("DEBUG: Usuário encontrado no banco!")
+                user = User(username_input)
+                login_user(user)
+                return redirect(url_for('index'))
+            else:
+                print("DEBUG: Nenhum usuário encontrado com essas credenciais.")
+                flash('Usuário ou senha inválidos!')
+        except Exception as e:
+            print(f"DEBUG: Erro ao conectar no banco: {e}")
+            flash('Erro ao conectar ao banco de dados.')
             
     return render_template('login.html')
 
