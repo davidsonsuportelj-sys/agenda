@@ -1,17 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Agendamentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f7f6; }
+        .navbar { margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .table-container { background: white; border-radius: 12px; padding: 20px; }
+        .btn-logout { font-weight: bold; }
+    </style>
+</head>
 <body>
-    <h1>Agenda de Agendamentos</h1>
-    <form action="/agendar" method="POST">
-        <input type="text" name="nome" placeholder="Seu nome" required>
-        <input type="time" name="horario" required>
-        <button type="submit">Agendar</button>
-    </form>
-    <h2>Horários Marcados:</h2>
-    <ul>
-        {% for ag in agenda %}
-            <li>{{ ag[1] }} - {{ ag[0] }}</li>
-        {% endfor %}
-    </ul>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="bi bi-calendar-check"></i> Minha Agenda</a>
+        <div class="ms-auto">
+            <span class="text-white me-3">Olá, Administrador</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm btn-logout">Sair</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card p-4">
+                <h4 class="mb-3">Novo Agendamento</h4>
+                <form action="/agendar" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Cliente</label>
+                        <input type="text" name="nome" class="form-control" placeholder="Ex: João Silva" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Serviço</label>
+                        <input type="text" name="servico" class="form-control" placeholder="Ex: Corte de Cabelo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data e Hora</label>
+                        <input type="datetime-local" name="horario" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-plus-circle"></i> Salvar Agendamento
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="table-container shadow-sm">
+                <h4 class="mb-3">Próximos Horários</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Serviço</th>
+                                <th>Horário</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if agenda %}
+                                {% for item in agenda %}
+                                <tr>
+                                    <td><strong>{{ item.cliente }}</strong></td>
+                                    <td>{{ item.servico }}</td>
+                                    <td>{{ item.horario }}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-danger" title="Cancelar"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Nenhum agendamento encontrado.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
