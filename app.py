@@ -4,22 +4,17 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
-# Carrega variáveis do ambiente local (quando rodando no seu PC)
 load_dotenv()
 
 app = Flask(__name__)
-# Chave secreta para a sessão de login
 app.secret_key = os.getenv("SECRET_KEY", "uma_chave_muito_segura_para_sessao")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# URL Fixada conforme configurado no seu Supabase
 url = "https://oeqqjyhgtrfexbsaufuo.supabase.co"
 key = os.getenv("SUPABASE_KEY")
-
-# Inicializa o cliente do Supabase
 supabase = create_client(url, key)
 
 class User(UserMixin):
@@ -30,32 +25,32 @@ class User(UserMixin):
 def load_user(user_id):
     return User(user_id)
 
-# --- ROTAS ---
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username_input = request.form.get('username')
-        password_input = request.form.get('password')
+        username_input = request.form.get('username').strip() # .strip() remove espaços extras
+        password_input = request.form.get('password').strip()
         
-        # LOG DE DEBUG: Isso aparecerá nos Logs do Render
-        print(f"DEBUG: Tentando login. Usuário enviado: '{username_input}', Senha: '{password_input}'")
-        
-        # Verifica credenciais na tabela 'usuarios' do Supabase
         try:
-            response = supabase.table("usuarios").select("*").eq("username", username_input).eq("password", password_input).execute()
+            # Buscamos APENAS pelo usuário
+            response = supabase.table("usuarios").select("*").eq("username", username_input).execute()
             
+            # Verificamos se encontramos o usuário E se a senha confere
             if response.data:
-                print("DEBUG: Usuário encontrado no banco!")
-                user = User(username_input)
-                login_user(user)
-                return redirect(url_for('index'))
+                user_db = response.data[0]
+                if user_db['password'] == password_input:
+                    user = User(username_input)
+                    login_user(user)
+                    return redirect(url_for('index'))
+                else:
+                    print(f"DEBUG: Senha incorreta. Esperada: '{user_db['password']}', Recebida: '{password_input}'")
             else:
-                print("DEBUG: Nenhum usuário encontrado com essas credenciais.")
-                flash('Usuário ou senha inválidos!')
+                print(f"DEBUG: Usuário '{username_input}' não encontrado no banco.")
+                
+            flash('Usuário ou senha inválidos!')
         except Exception as e:
-            print(f"DEBUG: Erro ao conectar no banco: {e}")
-            flash('Erro ao conectar ao banco de dados.')
+            print(f"DEBUG: Erro de banco: {e}")
+            flash('Erro ao conectar ao banco.')
             
     return render_template('login.html')
 
@@ -71,22 +66,18 @@ def index():
     try:
         response = supabase.table("agendamentos").select("*").execute()
         agenda = response.data
-    except Exception as e:
-        print(f"Erro ao buscar agendamentos: {e}")
+    except:
         agenda = []
     return render_template('index.html', agenda=agenda)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    try:
-        supabase.table("agendamentos").insert({
-            "cliente": request.form.get('nome'), 
-            "servico": request.form.get('servico'), 
-            "horario": request.form.get('horario')
-        }).execute()
-    except Exception as e:
-        print(f"Erro ao agendar: {e}")
+    supabase.table("agendamentos").insert({
+        "cliente": request.form.get('nome'), 
+        "servico": request.form.get('servico'), 
+        "horario": request.form.get('horario')
+    }).execute()
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
