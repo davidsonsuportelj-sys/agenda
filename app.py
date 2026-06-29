@@ -4,22 +4,22 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
+# Carrega variáveis do .env (apenas para ambiente local)
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "chave_padrao_segura")
+# Chave secreta necessária para as sessões de login
+app.secret_key = os.getenv("SECRET_KEY", "uma_chave_muito_segura_para_sessao")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Configuração do Supabase com tratamento de erro básico
-url = os.getenv("SUPABASE_URL")
+# URL Fixada conforme configurado no seu Supabase
+url = "https://oeqqjyhgtrfexbsaufuo.supabase.co"
 key = os.getenv("SUPABASE_KEY")
 
-if not url or not key:
-    raise ValueError("Variáveis de ambiente SUPABASE_URL ou SUPABASE_KEY não foram encontradas!")
-
+# Inicializa o cliente do Supabase
 supabase = create_client(url, key)
 
 class User(UserMixin):
@@ -30,22 +30,23 @@ class User(UserMixin):
 def load_user(user_id):
     return User(user_id)
 
+# --- ROTAS ---
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username_input = request.form.get('username')
         password_input = request.form.get('password')
         
-        try:
-            response = supabase.table("usuarios").select("*").eq("username", username_input).eq("password", password_input).execute()
-            if response.data:
-                user = User(username_input)
-                login_user(user)
-                return redirect(url_for('index'))
-            else:
-                flash('Usuário ou senha inválidos!')
-        except Exception as e:
-            flash(f'Erro de conexão com o banco: {str(e)}')
+        # Verifica credenciais na tabela 'usuarios' do Supabase
+        response = supabase.table("usuarios").select("*").eq("username", username_input).eq("password", password_input).execute()
+        
+        if response.data:
+            user = User(username_input)
+            login_user(user)
+            return redirect(url_for('index'))
+        else:
+            flash('Usuário ou senha inválidos!')
             
     return render_template('login.html')
 
