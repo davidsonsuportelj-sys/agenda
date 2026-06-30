@@ -46,14 +46,22 @@ def login():
 @login_required
 def index(status_filtro=None):
     try:
+        # Busca todos os dados para o dashboard
+        todos = supabase.table("agendamentos").select("*").execute().data
+        
+        # Filtra para a tabela
         query = supabase.table("agendamentos").select("*")
         if status_filtro:
             query = query.eq("status", status_filtro)
-        response = query.execute()
-        return render_template('index.html', agenda=response.data)
+        agenda = query.execute().data
+        
+        # Lógica do Dashboard
+        total_pendentes = len([i for i in todos if i['status'] == 'Pendente'])
+        
+        return render_template('index.html', agenda=agenda, total_pendentes=total_pendentes)
     except Exception as e:
-        print(f"Erro ao carregar: {e}")
-        return render_template('index.html', agenda=[])
+        print(f"Erro: {e}")
+        return render_template('index.html', agenda=[], total_pendentes=0)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
@@ -66,25 +74,19 @@ def agendar():
             "status": "Pendente"
         }).execute()
     except Exception as e:
-        print(f"Erro ao salvar: {e}")
+        print(f"Erro: {e}")
     return redirect(url_for('index'))
 
-@app.route('/excluir/<id>', methods=['GET'])
+@app.route('/excluir/<id>')
 @login_required
 def excluir(id):
-    try:
-        supabase.table("agendamentos").delete().eq("id", id).execute()
-    except Exception as e:
-        print(f"Erro ao excluir: {e}")
+    supabase.table("agendamentos").delete().eq("id", id).execute()
     return redirect(url_for('index'))
 
-@app.route('/mudar_status/<id>/<novo_status>', methods=['GET'])
+@app.route('/mudar_status/<id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
-    try:
-        supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
-    except Exception as e:
-        print(f"Erro ao mudar status: {e}")
+    supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
     return redirect(url_for('index'))
 
 @app.route('/logout')
