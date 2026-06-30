@@ -23,8 +23,15 @@
                 <input type="text" name="cliente" placeholder="Cliente" required style="width: 90%;"><br><br>
                 <input type="text" name="servico" placeholder="Serviço" required style="width: 90%;"><br><br>
                 <input type="datetime-local" name="horario" required style="width: 90%;"><br><br>
-                <input type="text" name="tecnico" placeholder="Usuário do Técnico" required style="width: 90%;"><br><br>
-                <select name="prioridade" style="width: 90%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
+                
+                <select name="tecnico" required style="width: 93%;">
+                    <option value="">Selecione o Técnico</option>
+                    {% for t in tecnicos %}
+                        <option value="{{ t.username }}">{{ t.username }}</option>
+                    {% endfor %}
+                </select><br><br>
+
+                <select name="prioridade" style="width: 93%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
                 <textarea name="obs" placeholder="Observações" style="width: 90%;"></textarea><br><br>
                 <button type="submit">Agendar</button>
             </form>
