@@ -1,5 +1,6 @@
 flask
-gunicorn
+flask-login
 supabase
 python-dotenv
-flask-login
+requests
+gunicorn
