@@ -5,7 +5,6 @@
     <title>Sistema de OS</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        .dashboard { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1.2em; font-weight: bold; }
         .container { display: flex; gap: 30px; }
         .form-area { width: 320px; border: 1px solid #ccc; padding: 20px; border-radius: 8px; background: #f4f4f4; }
         .table-area { flex-grow: 1; }
@@ -15,29 +14,20 @@
     </style>
 </head>
 <body>
-    <h1>Ordem de Serviço Técnica</h1>
-    
-    <div class="dashboard">
-        Total de OS Pendentes: {{ total_pendentes }}
-    </div>
-
+    <h1>Sistema de OS - Cargo: {{ role }}</h1>
     <div class="container">
         <div class="form-area">
             <h3>Nova OS</h3>
             <form action="/agendar" method="POST">
-                <input type="text" name="cliente" placeholder="Nome do Cliente" required style="width: 90%; margin-bottom: 10px;"><br>
-                <input type="text" name="servico" placeholder="Equipamento/Serviço" required style="width: 90%; margin-bottom: 10px;"><br>
+                <input type="text" name="cliente" placeholder="Cliente" required style="width: 90%; margin-bottom: 10px;"><br>
+                <input type="text" name="servico" placeholder="Equipamento" required style="width: 90%; margin-bottom: 10px;"><br>
                 <input type="datetime-local" name="horario" required style="width: 90%; margin-bottom: 10px;"><br>
-                <button type="submit" style="width: 95%; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer;">Registrar OS</button>
+                <button type="submit" style="width: 95%; padding: 10px; background: #007bff; color: white; border: none;">Registar</button>
             </form>
             <br>
-            <a href="/logout">Sair do Sistema</a>
+            <a href="/logout">Sair</a>
         </div>
-        
         <div class="table-area">
-            <div style="margin-bottom: 15px;">
-                Filtro: <a href="/">Todos</a> | <a href="/Pendente">Pendentes</a> | <a href="/Confirmado">Confirmados</a>
-            </div>
             <table>
                 <thead>
                     <tr><th>Cliente</th><th>Serviço</th><th>Data/Hora</th><th>Status</th><th>Ações</th></tr>
@@ -51,11 +41,11 @@
                         <td>{{ item.status }}</td>
                         <td>
                             <a href="/mudar_status/{{ item.id }}/Confirmado">✅</a>
-                            <a href="/excluir/{{ item.id }}" onclick="return confirm('Tem certeza?')">🗑️</a>
+                            {% if role == 'admin' %}
+                                <a href="/excluir/{{ item.id }}" onclick="return confirm('Apagar OS?')">🗑️</a>
+                            {% endif %}
                         </td>
                     </tr>
-                    {% else %}
-                    <tr><td colspan="5">Nenhum registro encontrado.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

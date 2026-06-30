@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -18,69 +18,56 @@ key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
 
 class User(UserMixin):
-    def __init__(self, username):
+    def __init__(self, username, role):
         self.id = username
+        self.role = role
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User(user_id)
+    # Busca o usuário e o cargo (role) no Supabase
+    response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
+    if response.data:
+        return User(response.data['username'], response.data['role'])
+    return None
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         user_in = request.form.get('username')
         pass_in = request.form.get('password')
-        try:
-            response = supabase.table("usuarios").select("username, password").execute()
-            for u in response.data:
-                if u['username'].strip() == user_in.strip() and u['password'].strip() == pass_in.strip():
-                    login_user(User(user_in))
-                    return redirect(url_for('index'))
-            flash('Usuário ou senha inválidos!')
-        except Exception as e:
-            print(f"Erro no login: {e}")
+        response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
+        if response.data and response.data['password'] == pass_in:
+            login_user(User(response.data['username'], response.data['role']))
+            return redirect(url_for('index'))
+        flash('Usuário ou senha inválidos!')
     return render_template('login.html')
 
 @app.route('/')
 @app.route('/<status_filtro>')
 @login_required
 def index(status_filtro=None):
-    try:
-        # Busca todos os dados para o dashboard
-        todos = supabase.table("agendamentos").select("*").execute().data
-        
-        # Filtra para a tabela
-        query = supabase.table("agendamentos").select("*")
-        if status_filtro:
-            query = query.eq("status", status_filtro)
-        agenda = query.execute().data
-        
-        # Lógica do Dashboard
-        total_pendentes = len([i for i in todos if i['status'] == 'Pendente'])
-        
-        return render_template('index.html', agenda=agenda, total_pendentes=total_pendentes)
-    except Exception as e:
-        print(f"Erro: {e}")
-        return render_template('index.html', agenda=[], total_pendentes=0)
+    query = supabase.table("agendamentos").select("*")
+    if status_filtro:
+        query = query.eq("status", status_filtro)
+    agenda = query.execute().data
+    return render_template('index.html', agenda=agenda, role=current_user.role)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    try:
-        supabase.table("agendamentos").insert({
-            "cliente": request.form.get('cliente'), 
-            "servico": request.form.get('servico'), 
-            "horario": request.form.get('horario'),
-            "status": "Pendente"
-        }).execute()
-    except Exception as e:
-        print(f"Erro: {e}")
+    supabase.table("agendamentos").insert({
+        "cliente": request.form.get('cliente'), 
+        "servico": request.form.get('servico'), 
+        "horario": request.form.get('horario'),
+        "status": "Pendente"
+    }).execute()
     return redirect(url_for('index'))
 
 @app.route('/excluir/<id>')
 @login_required
 def excluir(id):
-    supabase.table("agendamentos").delete().eq("id", id).execute()
+    if current_user.role == 'admin':
+        supabase.table("agendamentos").delete().eq("id", id).execute()
     return redirect(url_for('index'))
 
 @app.route('/mudar_status/<id>/<novo_status>')
