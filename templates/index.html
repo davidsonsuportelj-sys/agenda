@@ -6,13 +6,13 @@
         <td>{{ item.horario }}</td>
         <td>{{ item.status }}</td>
         <td>
-            <a href="/mudar_status/{{ item.id }}/Confirmado">Conf</a>
-            <a href="/excluir/{{ item.id }}">Excluir</a>
+            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Confirmado') }}">Conf</a>
+            <a href="{{ url_for('excluir', id=item.id) }}">Excluir</a>
         </td>
     </tr>
     {% else %}
     <tr>
-        <td colspan="5">Nenhum agendamento encontrado.</td>
+        <td colspan="5">Nenhum agendamento encontrado no banco de dados.</td>
     </tr>
     {% endfor %}
 </tbody>

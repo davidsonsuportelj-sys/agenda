@@ -43,35 +43,35 @@ def login():
             else:
                 flash('Usuário ou senha inválidos!')
         except Exception as e:
-            print(f"DEBUG LOGIN: {e}")
-            flash('Erro ao conectar!')
+            print(f"ERRO LOGIN: {e}")
+            flash('Erro de conexão!')
     return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 @app.route('/')
 @login_required
 def index():
     try:
-        # Busca agendamentos
         response = supabase.table("agendamentos").select("*").execute()
         agenda = response.data
-        print(f"DEBUG DADOS: {agenda}") # VAI APARECER NOS LOGS DO RENDER
-    except Exception as e:
-        print(f"DEBUG ERRO: {e}")
+    except:
         agenda = []
     return render_template('index.html', agenda=agenda)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    try:
-        supabase.table("agendamentos").insert({
-            "cliente": request.form.get('nome'), 
-            "servico": request.form.get('servico'), 
-            "horario": request.form.get('horario'),
-            "status": "Pendente"
-        }).execute()
-    except Exception as e:
-        print(f"DEBUG AGENDAR: {e}")
+    supabase.table("agendamentos").insert({
+        "cliente": request.form.get('nome'), 
+        "servico": request.form.get('servico'), 
+        "horario": request.form.get('horario'),
+        "status": "Pendente"
+    }).execute()
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')
