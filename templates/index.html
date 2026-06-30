@@ -2,48 +2,52 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de OS</title>
+    <title>Sistema de OS Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        .dashboard { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .container { display: flex; gap: 30px; }
-        .form-area { width: 320px; border: 1px solid #ccc; padding: 20px; border-radius: 8px; background: #f4f4f4; }
+        .container { display: flex; gap: 20px; }
+        .form-area { width: 300px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
+        .table-area { flex-grow: 1; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
-        th { background-color: #333; color: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; }
     </style>
 </head>
 <body>
-    <h1>Sistema de OS</h1>
-    <div class="dashboard">Total de OS Pendentes: {{ total_pendentes }}</div>
-    
-    <form action="/" method="GET" style="margin-bottom: 20px;">
-        <input type="text" name="q" placeholder="Buscar cliente ou serviço..." value="{{ busca }}">
-        <button type="submit">Pesquisar</button>
-    </form>
-
+    <h1>Gestão de OS (Total Pendentes: {{ total_pendentes }})</h1>
     <div class="container">
         <div class="form-area">
-            <h3>Nova OS</h3>
+            <h3>Registrar OS</h3>
             <form action="/agendar" method="POST">
                 <input type="text" name="cliente" placeholder="Cliente" required style="width: 90%;"><br><br>
                 <input type="text" name="servico" placeholder="Serviço" required style="width: 90%;"><br><br>
                 <input type="datetime-local" name="horario" required style="width: 90%;"><br><br>
-                <textarea name="obs" placeholder="Observações técnicas" style="width: 90%;"></textarea><br><br>
-                <button type="submit">Registrar</button>
+                <select name="prioridade" style="width: 90%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
+                <select name="tecnico" style="width: 90%;">
+                    <option value="">Selecione o Técnico</option>
+                    <option value="João">João</option>
+                    <option value="Maria">Maria</option>
+                    <option value="Carlos">Carlos</option>
+                </select><br><br>
+                <textarea name="obs" placeholder="Observações" style="width: 90%;"></textarea><br><br>
+                <button type="submit">Agendar</button>
             </form>
         </div>
-        
         <div class="table-area">
             <table>
-                <thead><tr><th>Cliente</th><th>Serviço</th><th>Obs</th><th>Status</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Cliente</th><th>Serviço</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>
                     {% for item in agenda %}
                     <tr>
                         <form action="/editar/{{ item.id }}" method="POST">
-                            <td><input type="text" name="cliente" value="{{ item.cliente }}"></td>
-                            <td><input type="text" name="servico" value="{{ item.servico }}"></td>
-                            <td><input type="text" name="obs" value="{{ item.obs or '' }}"></td>
+                            <td><input type="text" name="cliente" value="{{ item.cliente }}" size="10"></td>
+                            <td><input type="text" name="servico" value="{{ item.servico }}" size="10"></td>
+                            <td>
+                                <select name="tecnico">
+                                    <option value="João" {% if item.tecnico=='João' %}selected{% endif %}>João</option>
+                                    <option value="Maria" {% if item.tecnico=='Maria' %}selected{% endif %}>Maria</option>
+                                    <option value="Carlos" {% if item.tecnico=='Carlos' %}selected{% endif %}>Carlos</option>
+                                </select>
+                            </td>
                             <td>{{ item.status }}</td>
                             <td>
                                 <button type="submit">Salvar</button>

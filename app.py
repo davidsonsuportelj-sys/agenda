@@ -39,16 +39,9 @@ def login():
 @app.route('/')
 @login_required
 def index():
-    busca = request.args.get('q', '')
-    query = supabase.table("agendamentos").select("*")
-    agenda = query.execute().data
-    
-    # Filtro de busca simples
-    if busca:
-        agenda = [i for i in agenda if busca.lower() in i['cliente'].lower() or busca.lower() in i['servico'].lower()]
-        
+    agenda = supabase.table("agendamentos").select("*").order("horario").execute().data
     total_pendentes = len([i for i in agenda if i['status'] == 'Pendente'])
-    return render_template('index.html', agenda=agenda, total_pendentes=total_pendentes, busca=busca)
+    return render_template('index.html', agenda=agenda, total_pendentes=total_pendentes)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
@@ -58,6 +51,8 @@ def agendar():
         "servico": request.form.get('servico'), 
         "horario": request.form.get('horario'),
         "obs": request.form.get('obs'),
+        "prioridade": request.form.get('prioridade'),
+        "tecnico": request.form.get('tecnico'),
         "status": "Pendente"
     }).execute()
     return redirect(url_for('index'))
@@ -68,7 +63,9 @@ def editar(id):
     supabase.table("agendamentos").update({
         "cliente": request.form.get('cliente'),
         "servico": request.form.get('servico'),
-        "obs": request.form.get('obs')
+        "obs": request.form.get('obs'),
+        "prioridade": request.form.get('prioridade'),
+        "tecnico": request.form.get('tecnico')
     }).eq("id", id).execute()
     return redirect(url_for('index'))
 
