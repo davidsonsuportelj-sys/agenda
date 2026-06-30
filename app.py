@@ -39,7 +39,6 @@ def login():
             flash('Usuário ou senha inválidos!')
         except Exception as e:
             print(f"Erro no login: {e}")
-            flash('Erro de conexão!')
     return render_template('login.html')
 
 @app.route('/')
@@ -49,25 +48,34 @@ def index():
         response = supabase.table("agendamentos").select("*").execute()
         return render_template('index.html', agenda=response.data)
     except Exception as e:
-        print(f"Erro ao carregar index: {e}")
+        print(f"Erro ao carregar: {e}")
         return render_template('index.html', agenda=[])
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
+    nome = request.form.get('nome')
+    servico = request.form.get('servico')
+    horario = request.form.get('horario')
+    
+    # Validação simples
+    if not nome or not servico or not horario:
+        flash("Todos os campos são obrigatórios!")
+        return redirect(url_for('index'))
+
     try:
         dados = {
-            "cliente": request.form.get('nome'), 
-            "servico": request.form.get('servico'), 
-            "horario": request.form.get('horario'),
+            "cliente": nome, 
+            "servico": servico, 
+            "horario": horario,
             "status": "Pendente"
         }
         response = supabase.table("agendamentos").insert(dados).execute()
-        print(f"DEBUG SUPABASE RESPONSE: {response}")
-        flash("Agendamento processado.")
+        print(f"RESPOSTA DO SUPABASE: {response}")
     except Exception as e:
-        print(f"ERRO CRÍTICO AO AGENDAR: {e}")
+        print(f"ERRO DE INSERÇÃO: {e}")
         flash("Erro ao salvar no banco.")
+    
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')
