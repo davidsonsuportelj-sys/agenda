@@ -37,19 +37,23 @@ def login():
                     login_user(User(user_in))
                     return redirect(url_for('index'))
             flash('Usuário ou senha inválidos!')
-        except Exception:
-            flash('Erro de conexão!')
+        except Exception as e:
+            print(f"Erro no login: {e}")
     return render_template('login.html')
 
 @app.route('/')
 @app.route('/<status_filtro>')
 @login_required
 def index(status_filtro=None):
-    query = supabase.table("agendamentos").select("*")
-    if status_filtro:
-        query = query.eq("status", status_filtro)
-    response = query.execute()
-    return render_template('index.html', agenda=response.data)
+    try:
+        query = supabase.table("agendamentos").select("*")
+        if status_filtro:
+            query = query.eq("status", status_filtro)
+        response = query.execute()
+        return render_template('index.html', agenda=response.data)
+    except Exception as e:
+        print(f"Erro ao carregar: {e}")
+        return render_template('index.html', agenda=[])
 
 @app.route('/agendar', methods=['POST'])
 @login_required
@@ -65,7 +69,7 @@ def agendar():
         print(f"Erro ao salvar: {e}")
     return redirect(url_for('index'))
 
-@app.route('/excluir/<id>')
+@app.route('/excluir/<id>', methods=['GET'])
 @login_required
 def excluir(id):
     try:
@@ -74,7 +78,7 @@ def excluir(id):
         print(f"Erro ao excluir: {e}")
     return redirect(url_for('index'))
 
-@app.route('/mudar_status/<id>/<novo_status>')
+@app.route('/mudar_status/<id>/<novo_status>', methods=['GET'])
 @login_required
 def mudar_status(id, novo_status):
     try:
