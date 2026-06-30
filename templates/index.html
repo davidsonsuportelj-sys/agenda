@@ -10,7 +10,6 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; border-radius: 8px; overflow: hidden; }
         th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
         
-        /* Estilos dos campos de formulário */
         input, select, textarea { width: 93%; padding: 10px; border: 1px solid #d1d1d1; border-radius: 8px; margin-bottom: 10px; }
         select { 
             appearance: none; 
@@ -19,6 +18,7 @@
         }
         select:focus { outline: none; border-color: #ff7a00; box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1); }
         
+        .dashboard-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; width: 150px; text-align: center; }
         .btn-acao { padding: 6px 12px; color: white; text-decoration: none; border-radius: 6px; font-size: 12px; margin-right: 5px; border: none; cursor: pointer; display: inline-block; }
         .btn-sair { color: #dc3545; text-decoration: none; font-size: 14px; margin-left: 10px; }
         .status-concluido { color: green; font-weight: bold; }
@@ -28,7 +28,16 @@
     </style>
 </head>
 <body>
-    <h1>Bem-vindo, {{ user_id }} ({{ role }})</h1>
+    <h1>Bem-vindo, {{ user_id }}</h1>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+        <div class="dashboard-card"><strong>Pendentes</strong><br><span style="font-size: 24px;">{{ total_pendentes }}</span></div>
+        <div class="dashboard-card"><strong>Concluídos</strong><br><span style="font-size: 24px;">{{ total_concluidos }}</span></div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <a href="/">Todos</a> | <a href="/?status=Pendente">Pendentes</a> | <a href="/?status=Concluído">Concluídos</a>
+    </div>
 
     <div class="container">
         {% if role == 'admin' %}
@@ -38,22 +47,16 @@
                 <input type="text" name="cliente" placeholder="Cliente" required>
                 <input type="text" name="servico" placeholder="Serviço" required>
                 <input type="datetime-local" name="horario" required>
-                
                 <label class="label-campo">Técnico:</label>
                 <select name="tecnico" required>
                     <option value="">Selecione...</option>
                     {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
                 </select>
-
                 <label class="label-campo">Prioridade:</label>
                 <select name="prioridade">
-                    <option>Baixa</option>
-                    <option>Média</option>
-                    <option>Alta</option>
+                    <option>Baixa</option><option>Média</option><option>Alta</option>
                 </select>
-
                 <textarea name="obs" placeholder="Observações"></textarea>
-                
                 <div class="form-footer">
                     <button type="submit">Agendar</button>
                     <a href="/logout" class="btn-sair">Sair</a>
@@ -65,7 +68,6 @@
         {% endif %}
 
         <div class="table-area">
-            <h3>Demandas</h3>
             <table>
                 <thead>
                     <tr><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
