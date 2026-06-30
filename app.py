@@ -4,17 +4,15 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
-# Carrega do .env (localmente ou no Render)
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY")
+app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Busca as configurações das variáveis de ambiente
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
@@ -32,27 +30,20 @@ def login():
     if request.method == 'POST':
         user_in = request.form.get('username')
         pass_in = request.form.get('password')
-        
         try:
-            # Busca no Supabase
             response = supabase.table("usuarios").select("username, password").execute()
-            
-            # Verifica credenciais
             encontrado = False
             for u in response.data:
                 if u['username'].strip() == user_in.strip() and u['password'].strip() == pass_in.strip():
                     encontrado = True
                     break
-            
             if encontrado:
                 login_user(User(user_in))
                 return redirect(url_for('index'))
             else:
                 flash('Usuário ou senha inválidos!')
         except Exception as e:
-            print(f"Erro: {e}")
             flash('Erro ao conectar ao banco!')
-            
     return render_template('login.html')
 
 @app.route('/logout')
@@ -64,11 +55,38 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html', agenda=[])
+    try:
+        # Busca agendamentos ordenados por horário
+        response = supabase.table("agendamentos").select("*").order("horario", desc=False).execute()
+        agenda = response.data
+    except:
+        agenda = []
+    return render_template('index.html', agenda=agenda)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
+    supabase.table("agendamentos").insert({
+        "cliente": request.form.get('nome'), 
+        "servico": request.form.get('servico'), 
+        "horario": request.form.get('horario'),
+        "status": "Pendente"
+    }).execute()
+    flash("Agendamento realizado com sucesso!")
+    return redirect(url_for('index'))
+
+@app.route('/excluir/<int:id>')
+@login_required
+def excluir(id):
+    supabase.table("agendamentos").delete().eq("id", id).execute()
+    flash("Agendamento excluído!")
+    return redirect(url_for('index'))
+
+@app.route('/mudar_status/<int:id>/<novo_status>')
+@login_required
+def mudar_status(id, novo_status):
+    supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
+    flash(f"Status alterado para {novo_status}!")
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
