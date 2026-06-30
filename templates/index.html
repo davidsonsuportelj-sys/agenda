@@ -14,8 +14,6 @@
         .status-concluido { color: green; font-weight: bold; }
         .status-cancelado { color: red; font-weight: bold; }
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 15px; }
-        
-        /* Estilo para as legendas dos campos */
         .label-campo { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #333; }
     </style>
 </head>
@@ -61,13 +59,25 @@
         <div class="table-area">
             <h3>Demandas</h3>
             <table>
-                <thead><tr><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Cliente</th>
+                        <th>Serviço</th>
+                        <th>Prioridade</th>
+                        <th>Observação</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
                 <tbody>
                     {% for item in agenda %}
                     <tr>
                         <td>{{ item.horario.replace('T', ' ')[:16] }}</td>
                         <td>{{ item.cliente }}</td>
                         <td>{{ item.servico }}</td>
+                        <td>{{ item.prioridade or '' }}</td>
+                        <td>{{ item.obs or '' }}</td>
                         <td>
                             {% if item.status == 'Concluído' %}<span class="status-concluido">✔ Concluído</span>
                             {% elif item.status == 'Cancelado' %}<span class="status-cancelado">✘ Cancelado</span>
