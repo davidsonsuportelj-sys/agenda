@@ -45,12 +45,15 @@ def login():
 def index():
     status_filtro = request.args.get('status', 'Todos')
     query = supabase.table("agendamentos").select("*")
-    if current_user.role != 'admin':
+    
+    # Filtro por cargo
+    if current_user.role == 'tecnico':
         query = query.eq("tecnico", current_user.id)
+    elif current_user.role == 'vendedor':
+        query = query.eq("vendedor", current_user.id)
     
     agenda_full = query.execute().data
     
-    # Cálculos para o Dashboard
     total_pendentes = len([item for item in agenda_full if item['status'] == 'Pendente'])
     total_concluidos = len([item for item in agenda_full if item['status'] == 'Concluído'])
     total_cancelados = len([item for item in agenda_full if item['status'] == 'Cancelado'])
@@ -61,20 +64,23 @@ def index():
         agenda = agenda_full
     
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
+    vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
+    
     return render_template('index.html', agenda=agenda, role=current_user.role, 
-                           user_id=current_user.id, tecnicos=tecnicos, 
+                           user_id=current_user.id, tecnicos=tecnicos, vendedores=vendedores,
                            total_pendentes=total_pendentes, total_concluidos=total_concluidos,
                            total_cancelados=total_cancelados)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    if current_user.role == 'admin':
+    if current_user.role in ['admin', 'vendedor']:
         supabase.table("agendamentos").insert({
             "cliente": request.form.get('cliente'), 
             "servico": request.form.get('servico'), 
             "horario": request.form.get('horario'),
             "tecnico": request.form.get('tecnico'),
+            "vendedor": request.form.get('vendedor') if current_user.role == 'admin' else current_user.id,
             "prioridade": request.form.get('prioridade'),
             "obs": request.form.get('obs'),
             "status": "Pendente"
