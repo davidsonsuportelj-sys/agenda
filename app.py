@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from supabase import create_client
 from dotenv import load_dotenv
@@ -18,20 +18,12 @@ key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
 
 class User(UserMixin):
-    def __init__(self, username, role):
+    def __init__(self, username):
         self.id = username
-        self.role = role
 
 @login_manager.user_loader
 def load_user(user_id):
-    try:
-        response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
-        if response.data:
-            role = response.data.get('role', 'tecnico')
-            return User(response.data['username'], role)
-    except Exception as e:
-        print(f"Erro no load_user: {e}")
-    return None
+    return User(user_id)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -40,21 +32,23 @@ def login():
         pass_in = request.form.get('password')
         response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
         if response.data and response.data['password'] == pass_in:
-            role = response.data.get('role', 'tecnico')
-            login_user(User(response.data['username'], role))
+            login_user(User(user_in))
             return redirect(url_for('index'))
-        flash('Usuário ou senha inválidos!')
     return render_template('login.html')
 
 @app.route('/')
-@app.route('/<status_filtro>')
 @login_required
-def index(status_filtro=None):
+def index():
+    busca = request.args.get('q', '')
     query = supabase.table("agendamentos").select("*")
-    if status_filtro:
-        query = query.eq("status", status_filtro)
     agenda = query.execute().data
-    return render_template('index.html', agenda=agenda, role=current_user.role)
+    
+    # Filtro de busca simples
+    if busca:
+        agenda = [i for i in agenda if busca.lower() in i['cliente'].lower() or busca.lower() in i['servico'].lower()]
+        
+    total_pendentes = len([i for i in agenda if i['status'] == 'Pendente'])
+    return render_template('index.html', agenda=agenda, total_pendentes=total_pendentes, busca=busca)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
@@ -63,15 +57,25 @@ def agendar():
         "cliente": request.form.get('cliente'), 
         "servico": request.form.get('servico'), 
         "horario": request.form.get('horario'),
+        "obs": request.form.get('obs'),
         "status": "Pendente"
     }).execute()
+    return redirect(url_for('index'))
+
+@app.route('/editar/<id>', methods=['POST'])
+@login_required
+def editar(id):
+    supabase.table("agendamentos").update({
+        "cliente": request.form.get('cliente'),
+        "servico": request.form.get('servico'),
+        "obs": request.form.get('obs')
+    }).eq("id", id).execute()
     return redirect(url_for('index'))
 
 @app.route('/excluir/<id>')
 @login_required
 def excluir(id):
-    if current_user.role == 'admin':
-        supabase.table("agendamentos").delete().eq("id", id).execute()
+    supabase.table("agendamentos").delete().eq("id", id).execute()
     return redirect(url_for('index'))
 
 @app.route('/mudar_status/<id>/<novo_status>')
