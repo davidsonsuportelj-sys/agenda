@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de OS - {{ user_id }}</title>
+    <title>Sistema de OS</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .container { display: flex; gap: 20px; }
@@ -20,17 +20,19 @@
         <div class="form-area">
             <h3>Nova OS (Admin)</h3>
             <form action="/agendar" method="POST">
-                <input type="text" name="cliente" placeholder="Cliente" required><br><br>
-                <input type="text" name="servico" placeholder="Serviço" required><br><br>
-                <input type="datetime-local" name="horario" required><br><br>
-                <input type="text" name="tecnico" placeholder="Usuário do Técnico" required><br><br>
+                <input type="text" name="cliente" placeholder="Cliente" required style="width: 90%;"><br><br>
+                <input type="text" name="servico" placeholder="Serviço" required style="width: 90%;"><br><br>
+                <input type="datetime-local" name="horario" required style="width: 90%;"><br><br>
+                <input type="text" name="tecnico" placeholder="Usuário do Técnico" required style="width: 90%;"><br><br>
+                <select name="prioridade" style="width: 90%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
+                <textarea name="obs" placeholder="Observações" style="width: 90%;"></textarea><br><br>
                 <button type="submit">Agendar</button>
             </form>
         </div>
         {% endif %}
 
         <div class="table-area">
-            <h3>Suas Demandas</h3>
+            <h3>Demandas</h3>
             <table>
                 <thead><tr><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>

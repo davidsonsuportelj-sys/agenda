@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from supabase import create_client
 from dotenv import load_dotenv
@@ -24,9 +24,13 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
-    if response.data:
-        return User(response.data['username'], response.data['role'])
+    try:
+        response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
+        if response.data:
+            role = response.data.get('role', 'tecnico')
+            return User(response.data['username'], role)
+    except:
+        pass
     return None
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -36,14 +40,16 @@ def login():
         pass_in = request.form.get('password')
         response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
         if response.data and response.data['password'] == pass_in:
-            login_user(User(response.data['username'], response.data['role']))
+            role = response.data.get('role', 'tecnico')
+            login_user(User(response.data['username'], role))
             return redirect(url_for('index'))
+        flash('Usuário ou senha inválidos!')
     return render_template('login.html')
 
 @app.route('/')
 @login_required
 def index():
-    # Se for admin, vê tudo. Se for técnico, vê apenas as suas OS.
+    # Admin vê tudo, técnico vê apenas o que está no nome dele
     if current_user.role == 'admin':
         agenda = supabase.table("agendamentos").select("*").order("horario").execute().data
     else:
@@ -54,14 +60,18 @@ def index():
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    if current_user.role == 'admin':
+    try:
         supabase.table("agendamentos").insert({
             "cliente": request.form.get('cliente'), 
             "servico": request.form.get('servico'), 
             "horario": request.form.get('horario'),
             "tecnico": request.form.get('tecnico'),
+            "prioridade": request.form.get('prioridade'),
+            "obs": request.form.get('obs'),
             "status": "Pendente"
         }).execute()
+    except Exception as e:
+        print(f"Erro ao agendar: {e}")
     return redirect(url_for('index'))
 
 @app.route('/mudar_status/<id>/<novo_status>')
