@@ -9,11 +9,14 @@
         .form-area { width: 300px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .btn-acao { padding: 5px 10px; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; margin-right: 5px; border: none; cursor: pointer; }
+        .btn-acao { padding: 5px 10px; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; margin-right: 5px; border: none; cursor: pointer; display: inline-block; }
         .btn-sair { color: #dc3545; text-decoration: none; font-size: 14px; }
         .status-concluido { color: green; font-weight: bold; }
         .status-cancelado { color: red; font-weight: bold; }
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 15px; }
+        
+        /* Estilo para as legendas dos campos */
+        .label-campo { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #333; }
     </style>
 </head>
 <body>
@@ -27,12 +30,22 @@
                 <input type="text" name="cliente" placeholder="Cliente" required style="width: 90%;"><br><br>
                 <input type="text" name="servico" placeholder="Serviço" required style="width: 90%;"><br><br>
                 <input type="datetime-local" name="horario" required style="width: 90%;"><br><br>
+                
+                <label class="label-campo">Responsável Técnico:</label>
                 <select name="tecnico" required style="width: 93%;">
                     <option value="">Selecione o Técnico</option>
                     {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
                 </select><br><br>
-                <select name="prioridade" style="width: 93%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
+
+                <label class="label-campo">Prioridade:</label>
+                <select name="prioridade" style="width: 93%;">
+                    <option>Baixa</option>
+                    <option>Média</option>
+                    <option>Alta</option>
+                </select><br><br>
+
                 <textarea name="obs" placeholder="Observações" style="width: 90%;"></textarea><br><br>
+                
                 <div class="form-footer">
                     <button type="submit">Agendar</button>
                     <a href="/logout" class="btn-sair">Sair</a>
@@ -40,7 +53,9 @@
             </form>
         </div>
         {% else %}
-            <a href="/logout" class="btn-sair">Sair do Sistema</a>
+            <div style="margin-bottom: 20px;">
+                <a href="/logout" class="btn-sair">Sair do Sistema</a>
+            </div>
         {% endif %}
 
         <div class="table-area">
