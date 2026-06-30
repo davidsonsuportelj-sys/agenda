@@ -1,38 +1,39 @@
-<div class="filtros">
-    <input type="text" id="filtro" onkeyup="filtrarTabela()" placeholder="Buscar cliente...">
+<div style="display: flex; gap: 20px; padding: 20px;">
+
+    <div style="width: 300px; border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
+        <h3>Novo Agendamento</h3>
+        <form action="/agendar" method="POST">
+            <input type="text" name="nome" placeholder="Cliente" required><br><br>
+            <input type="text" name="servico" placeholder="Serviço" required><br><br>
+            <input type="text" name="horario" placeholder="Horário" required><br><br>
+            <button type="submit">Agendar</button>
+        </form>
+    </div>
+
+    <div style="flex-grow: 1;">
+        <h3>Agenda</h3>
+        <table border="1" width="100%">
+            <thead>
+                <tr>
+                    <th>Cliente</th><th>Serviço</th><th>Horário</th><th>Status</th><th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in agenda %}
+                <tr>
+                    <td>{{ item.cliente }}</td>
+                    <td>{{ item.servico }}</td>
+                    <td>{{ item.horario }}</td>
+                    <td>{{ item.status }}</td>
+                    <td>
+                        <a href="/mudar_status/{{ item.id }}/Confirmado">✅</a>
+                        <a href="/excluir/{{ item.id }}">🗑️</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">Nenhum agendamento.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-
-<a href="#modal-agendar" class="btn-novo">➕ Novo Agendamento</a>
-
-<table>
-    <thead>
-        <tr>
-            <th>Cliente</th><th>Serviço</th><th>Horário</th><th>Status</th><th>Ações</th>
-        </tr>
-    </thead>
-    <tbody id="tabela-agenda">
-        {% for item in agenda %}
-        <tr>
-            <td>{{ item.cliente }}</td>
-            <td>{{ item.servico }}</td>
-            <td>{{ item.horario }}</td>
-            <td>{{ item.status }}</td>
-            <td>
-                <a href="/mudar_status/{{ item.id }}/Confirmado">✅</a>
-                <a href="/excluir/{{ item.id }}">🗑️</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<script>
-function filtrarTabela() {
-    let input = document.getElementById("filtro").value.toUpperCase();
-    let trs = document.getElementById("tabela-agenda").getElementsByTagName("tr");
-    for (let i = 0; i < trs.length; i++) {
-        let txt = trs[i].textContent || trs[i].innerText;
-        trs[i].style.display = txt.toUpperCase().indexOf(input) > -1 ? "" : "none";
-    }
-}
-</script>
