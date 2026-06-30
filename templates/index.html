@@ -11,11 +11,7 @@
         th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
         
         input, select, textarea { width: 93%; padding: 10px; border: 1px solid #d1d1d1; border-radius: 8px; margin-bottom: 10px; }
-        select { 
-            appearance: none; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1.5 3.5h9z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 12px center; cursor: pointer;
-        }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1.5 3.5h9z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
         select:focus { outline: none; border-color: #ff7a00; box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1); }
         
         .dashboard-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; width: 150px; text-align: center; }
@@ -70,11 +66,12 @@
         <div class="table-area">
             <table>
                 <thead>
-                    <tr><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
+                    <tr><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
                 </thead>
                 <tbody>
                     {% for item in agenda %}
                     <tr>
+                        <td>{{ item.tecnico or 'N/A' }}</td>
                         <td>{{ item.horario.replace('T', ' ')[:16] }}</td>
                         <td>{{ item.cliente }}</td>
                         <td>{{ item.servico }}</td>
