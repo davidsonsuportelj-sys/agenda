@@ -1,25 +1,18 @@
-<table>
-    <thead>
-        <tr>
-            <th>Cliente</th>
-            <th>Serviço</th>
-            <th>Horário</th>
-            <th>Status</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in agenda %}
-        <tr>
-            <td>{{ item.cliente }}</td>
-            <td>{{ item.servico }}</td>
-            <td>{{ item.horario }}</td>
-            <td>{{ item.status }}</td>
-            <td>
-                <a href="/mudar_status/{{ item.id }}/Confirmado">Confirmar</a>
-                <a href="/excluir/{{ item.id }}">Excluir</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<tbody>
+    {% for item in agenda %}
+    <tr>
+        <td>{{ item.cliente }}</td>
+        <td>{{ item.servico }}</td>
+        <td>{{ item.horario }}</td>
+        <td>{{ item.status }}</td>
+        <td>
+            <a href="/mudar_status/{{ item.id }}/Confirmado">Conf</a>
+            <a href="/excluir/{{ item.id }}">Excluir</a>
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="5">Nenhum agendamento encontrado.</td>
+    </tr>
+    {% endfor %}
+</tbody>

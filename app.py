@@ -4,18 +4,15 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
-# Carrega variáveis de ambiente
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
-# Configuração do Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Configuração do Supabase
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
@@ -46,26 +43,20 @@ def login():
             else:
                 flash('Usuário ou senha inválidos!')
         except Exception as e:
-            print(f"DEBUG: Erro no login: {e}")
-            flash('Erro ao conectar ao banco!')
+            print(f"DEBUG LOGIN: {e}")
+            flash('Erro ao conectar!')
     return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
 
 @app.route('/')
 @login_required
 def index():
     try:
-        # Busca agendamentos ordenados por horário
-        response = supabase.table("agendamentos").select("*").order("horario", desc=False).execute()
+        # Busca agendamentos
+        response = supabase.table("agendamentos").select("*").execute()
         agenda = response.data
-        print(f"DEBUG: Agendamentos carregados: {len(agenda)} itens")
+        print(f"DEBUG DADOS: {agenda}") # VAI APARECER NOS LOGS DO RENDER
     except Exception as e:
-        print(f"DEBUG: Erro ao carregar agendamentos: {e}")
+        print(f"DEBUG ERRO: {e}")
         agenda = []
     return render_template('index.html', agenda=agenda)
 
@@ -79,24 +70,20 @@ def agendar():
             "horario": request.form.get('horario'),
             "status": "Pendente"
         }).execute()
-        flash("Agendamento realizado com sucesso!")
     except Exception as e:
-        print(f"DEBUG: Erro ao agendar: {e}")
-        flash("Erro ao salvar agendamento.")
+        print(f"DEBUG AGENDAR: {e}")
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')
 @login_required
 def excluir(id):
     supabase.table("agendamentos").delete().eq("id", id).execute()
-    flash("Agendamento excluído!")
     return redirect(url_for('index'))
 
 @app.route('/mudar_status/<int:id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
-    flash(f"Status alterado para {novo_status}!")
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
