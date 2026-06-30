@@ -9,11 +9,11 @@
         .form-area { width: 300px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .btn-concluir { padding: 5px 10px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; }
-        .btn-concluir:hover { background: #5a6268; }
-        .status-concluido { color: green; font-weight: bold; }
-        .form-footer { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+        .btn-acao { padding: 5px 10px; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; margin-right: 5px; border: none; cursor: pointer; }
         .btn-sair { color: #dc3545; text-decoration: none; font-size: 14px; }
+        .status-concluido { color: green; font-weight: bold; }
+        .status-cancelado { color: red; font-weight: bold; }
+        .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -27,17 +27,12 @@
                 <input type="text" name="cliente" placeholder="Cliente" required style="width: 90%;"><br><br>
                 <input type="text" name="servico" placeholder="Serviço" required style="width: 90%;"><br><br>
                 <input type="datetime-local" name="horario" required style="width: 90%;"><br><br>
-                
                 <select name="tecnico" required style="width: 93%;">
                     <option value="">Selecione o Técnico</option>
-                    {% for t in tecnicos %}
-                        <option value="{{ t.username }}">{{ t.username }}</option>
-                    {% endfor %}
+                    {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
                 </select><br><br>
-
                 <select name="prioridade" style="width: 93%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
                 <textarea name="obs" placeholder="Observações" style="width: 90%;"></textarea><br><br>
-                
                 <div class="form-footer">
                     <button type="submit">Agendar</button>
                     <a href="/logout" class="btn-sair">Sair</a>
@@ -59,15 +54,14 @@
                         <td>{{ item.cliente }}</td>
                         <td>{{ item.servico }}</td>
                         <td>
-                            {% if item.status == 'Concluído' %}
-                                <span class="status-concluido">✔ Concluído</span>
-                            {% else %}
-                                {{ item.status }}
-                            {% endif %}
+                            {% if item.status == 'Concluído' %}<span class="status-concluido">✔ Concluído</span>
+                            {% elif item.status == 'Cancelado' %}<span class="status-cancelado">✘ Cancelado</span>
+                            {% else %}{{ item.status }}{% endif %}
                         </td>
                         <td>
-                            {% if item.status != 'Concluído' %}
-                                <a href="/mudar_status/{{ item.id }}/Concluído" class="btn-concluir">Finalizar</a>
+                            {% if item.status != 'Concluído' and item.status != 'Cancelado' %}
+                                <a href="/mudar_status/{{ item.id }}/Concluído" class="btn-acao" style="background-color: green;">Finalizar</a>
+                                <a href="/cancelar/{{ item.id }}" class="btn-acao" style="background-color: #dc3545;" onclick="return confirm('Cancelar esta OS?')">Cancelar</a>
                             {% endif %}
                         </td>
                     </tr>

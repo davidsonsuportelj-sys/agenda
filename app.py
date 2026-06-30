@@ -43,15 +43,12 @@ def login():
 @app.route('/')
 @login_required
 def index():
-    # Busca agendamentos
     if current_user.role == 'admin':
         agenda = supabase.table("agendamentos").select("*").order("horario").execute().data
     else:
         agenda = supabase.table("agendamentos").select("*").eq("tecnico", current_user.id).execute().data
     
-    # Busca apenas os usuários que são técnicos para o dropdown
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
-        
     return render_template('index.html', agenda=agenda, role=current_user.role, user_id=current_user.id, tecnicos=tecnicos)
 
 @app.route('/agendar', methods=['POST'])
@@ -73,6 +70,12 @@ def agendar():
 @login_required
 def mudar_status(id, novo_status):
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
+    return redirect(url_for('index'))
+
+@app.route('/cancelar/<id>')
+@login_required
+def cancelar(id):
+    supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
     return redirect(url_for('index'))
 
 @app.route('/logout')
