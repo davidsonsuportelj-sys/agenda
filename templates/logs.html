@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Histórico de Logs</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f7f7f7; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #ff7a00; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Voltar para o Sistema</a>
+    <h3>Histórico de Ações</h3>
+    <table>
+        <thead>
+            <tr><th>Data/Hora</th><th>Usuário</th><th>ID OS</th><th>Ação</th></tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.data.replace('T', ' ')[:16] }}</td>
+                <td>{{ log.usuario }}</td>
+                <td>{{ log.os_id }}</td>
+                <td>{{ log.acao }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
