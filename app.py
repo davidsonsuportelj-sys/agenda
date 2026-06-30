@@ -4,15 +4,18 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
+# Carrega variáveis de ambiente
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
+# Configuração do Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Configuração do Supabase
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
@@ -38,25 +41,36 @@ def login():
                     return redirect(url_for('index'))
             flash('Usuário ou senha inválidos!')
         except Exception as e:
+            print(f"Erro no login: {e}")
             flash('Erro de conexão!')
     return render_template('login.html')
 
 @app.route('/')
 @login_required
 def index():
-    # Busca agendamentos. Se a tabela no Supabase estiver vazia, ele retorna []
-    response = supabase.table("agendamentos").select("*").execute()
-    return render_template('index.html', agenda=response.data)
+    try:
+        response = supabase.table("agendamentos").select("*").execute()
+        return render_template('index.html', agenda=response.data)
+    except Exception as e:
+        print(f"Erro ao carregar index: {e}")
+        return render_template('index.html', agenda=[])
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    supabase.table("agendamentos").insert({
-        "cliente": request.form.get('nome'), 
-        "servico": request.form.get('servico'), 
-        "horario": request.form.get('horario'),
-        "status": "Pendente"
-    }).execute()
+    try:
+        # Tenta inserir no Supabase
+        supabase.table("agendamentos").insert({
+            "cliente": request.form.get('nome'), 
+            "servico": request.form.get('servico'), 
+            "horario": request.form.get('horario'),
+            "status": "Pendente"
+        }).execute()
+        flash("Agendamento realizado!")
+    except Exception as e:
+        # Se falhar, printamos o erro nos logs do Render para você ver
+        print(f"ERRO AO AGENDAR NO SUPABASE: {e}")
+        flash("Erro ao salvar no banco. Verifique as permissões (RLS).")
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')
