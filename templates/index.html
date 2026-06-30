@@ -2,13 +2,16 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de OS</title>
+    <title>Sistema de OS - {{ user_id }}</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .container { display: flex; gap: 20px; }
         .form-area { width: 300px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .btn-concluir { padding: 5px 10px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; }
+        .btn-concluir:hover { background: #5a6268; }
+        .status-concluido { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -47,8 +50,18 @@
                     <tr>
                         <td>{{ item.cliente }}</td>
                         <td>{{ item.servico }}</td>
-                        <td>{{ item.status }}</td>
-                        <td><a href="/mudar_status/{{ item.id }}/Concluído">Concluir ✅</a></td>
+                        <td>
+                            {% if item.status == 'Concluído' %}
+                                <span class="status-concluido">✔ Concluído</span>
+                            {% else %}
+                                {{ item.status }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.status != 'Concluído' %}
+                                <a href="/mudar_status/{{ item.id }}/Concluído" class="btn-concluir">Finalizar</a>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
