@@ -18,12 +18,16 @@ key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
 
 class User(UserMixin):
-    def __init__(self, username):
+    def __init__(self, username, role):
         self.id = username
+        self.role = role
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User(user_id)
+    response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
+    if response.data:
+        return User(response.data['username'], response.data['role'])
+    return None
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -32,47 +36,32 @@ def login():
         pass_in = request.form.get('password')
         response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
         if response.data and response.data['password'] == pass_in:
-            login_user(User(user_in))
+            login_user(User(response.data['username'], response.data['role']))
             return redirect(url_for('index'))
     return render_template('login.html')
 
 @app.route('/')
 @login_required
 def index():
-    agenda = supabase.table("agendamentos").select("*").order("horario").execute().data
-    total_pendentes = len([i for i in agenda if i['status'] == 'Pendente'])
-    return render_template('index.html', agenda=agenda, total_pendentes=total_pendentes)
+    # Se for admin, vê tudo. Se for técnico, vê apenas as suas OS.
+    if current_user.role == 'admin':
+        agenda = supabase.table("agendamentos").select("*").order("horario").execute().data
+    else:
+        agenda = supabase.table("agendamentos").select("*").eq("tecnico", current_user.id).execute().data
+        
+    return render_template('index.html', agenda=agenda, role=current_user.role, user_id=current_user.id)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    supabase.table("agendamentos").insert({
-        "cliente": request.form.get('cliente'), 
-        "servico": request.form.get('servico'), 
-        "horario": request.form.get('horario'),
-        "obs": request.form.get('obs'),
-        "prioridade": request.form.get('prioridade'),
-        "tecnico": request.form.get('tecnico'),
-        "status": "Pendente"
-    }).execute()
-    return redirect(url_for('index'))
-
-@app.route('/editar/<id>', methods=['POST'])
-@login_required
-def editar(id):
-    supabase.table("agendamentos").update({
-        "cliente": request.form.get('cliente'),
-        "servico": request.form.get('servico'),
-        "obs": request.form.get('obs'),
-        "prioridade": request.form.get('prioridade'),
-        "tecnico": request.form.get('tecnico')
-    }).eq("id", id).execute()
-    return redirect(url_for('index'))
-
-@app.route('/excluir/<id>')
-@login_required
-def excluir(id):
-    supabase.table("agendamentos").delete().eq("id", id).execute()
+    if current_user.role == 'admin':
+        supabase.table("agendamentos").insert({
+            "cliente": request.form.get('cliente'), 
+            "servico": request.form.get('servico'), 
+            "horario": request.form.get('horario'),
+            "tecnico": request.form.get('tecnico'),
+            "status": "Pendente"
+        }).execute()
     return redirect(url_for('index'))
 
 @app.route('/mudar_status/<id>/<novo_status>')

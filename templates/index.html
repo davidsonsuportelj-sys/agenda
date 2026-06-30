@@ -2,59 +2,44 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de OS Pro</title>
+    <title>Sistema de OS - {{ user_id }}</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .container { display: flex; gap: 20px; }
         .form-area { width: 300px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
-        .table-area { flex-grow: 1; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
     </style>
 </head>
 <body>
-    <h1>Gestão de OS (Total Pendentes: {{ total_pendentes }})</h1>
+    <h1>Bem-vindo, {{ user_id }} ({{ role }})</h1>
+    <a href="/logout">Sair</a>
+
     <div class="container">
+        {% if role == 'admin' %}
         <div class="form-area">
-            <h3>Registrar OS</h3>
+            <h3>Nova OS (Admin)</h3>
             <form action="/agendar" method="POST">
-                <input type="text" name="cliente" placeholder="Cliente" required style="width: 90%;"><br><br>
-                <input type="text" name="servico" placeholder="Serviço" required style="width: 90%;"><br><br>
-                <input type="datetime-local" name="horario" required style="width: 90%;"><br><br>
-                <select name="prioridade" style="width: 90%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
-                <select name="tecnico" style="width: 90%;">
-                    <option value="">Selecione o Técnico</option>
-                    <option value="João">João</option>
-                    <option value="Maria">Maria</option>
-                    <option value="Carlos">Carlos</option>
-                </select><br><br>
-                <textarea name="obs" placeholder="Observações" style="width: 90%;"></textarea><br><br>
+                <input type="text" name="cliente" placeholder="Cliente" required><br><br>
+                <input type="text" name="servico" placeholder="Serviço" required><br><br>
+                <input type="datetime-local" name="horario" required><br><br>
+                <input type="text" name="tecnico" placeholder="Usuário do Técnico" required><br><br>
                 <button type="submit">Agendar</button>
             </form>
         </div>
+        {% endif %}
+
         <div class="table-area">
+            <h3>Suas Demandas</h3>
             <table>
-                <thead><tr><th>Cliente</th><th>Serviço</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>
                     {% for item in agenda %}
                     <tr>
-                        <form action="/editar/{{ item.id }}" method="POST">
-                            <td><input type="text" name="cliente" value="{{ item.cliente }}" size="10"></td>
-                            <td><input type="text" name="servico" value="{{ item.servico }}" size="10"></td>
-                            <td>
-                                <select name="tecnico">
-                                    <option value="João" {% if item.tecnico=='João' %}selected{% endif %}>João</option>
-                                    <option value="Maria" {% if item.tecnico=='Maria' %}selected{% endif %}>Maria</option>
-                                    <option value="Carlos" {% if item.tecnico=='Carlos' %}selected{% endif %}>Carlos</option>
-                                </select>
-                            </td>
-                            <td>{{ item.status }}</td>
-                            <td>
-                                <button type="submit">Salvar</button>
-                                <a href="/mudar_status/{{ item.id }}/Confirmado">✅</a>
-                                <a href="/excluir/{{ item.id }}" onclick="return confirm('Excluir?')">🗑️</a>
-                            </td>
-                        </form>
+                        <td>{{ item.cliente }}</td>
+                        <td>{{ item.servico }}</td>
+                        <td>{{ item.status }}</td>
+                        <td><a href="/mudar_status/{{ item.id }}/Concluído">Concluir ✅</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
