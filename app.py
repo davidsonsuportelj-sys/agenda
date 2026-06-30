@@ -4,15 +4,18 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
+# Carrega variáveis de ambiente
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
+# Configuração do Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Configuração do Supabase
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
@@ -43,6 +46,7 @@ def login():
             else:
                 flash('Usuário ou senha inválidos!')
         except Exception as e:
+            print(f"DEBUG: Erro no login: {e}")
             flash('Erro ao conectar ao banco!')
     return render_template('login.html')
 
@@ -59,20 +63,26 @@ def index():
         # Busca agendamentos ordenados por horário
         response = supabase.table("agendamentos").select("*").order("horario", desc=False).execute()
         agenda = response.data
-    except:
+        print(f"DEBUG: Agendamentos carregados: {len(agenda)} itens")
+    except Exception as e:
+        print(f"DEBUG: Erro ao carregar agendamentos: {e}")
         agenda = []
     return render_template('index.html', agenda=agenda)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    supabase.table("agendamentos").insert({
-        "cliente": request.form.get('nome'), 
-        "servico": request.form.get('servico'), 
-        "horario": request.form.get('horario'),
-        "status": "Pendente"
-    }).execute()
-    flash("Agendamento realizado com sucesso!")
+    try:
+        supabase.table("agendamentos").insert({
+            "cliente": request.form.get('nome'), 
+            "servico": request.form.get('servico'), 
+            "horario": request.form.get('horario'),
+            "status": "Pendente"
+        }).execute()
+        flash("Agendamento realizado com sucesso!")
+    except Exception as e:
+        print(f"DEBUG: Erro ao agendar: {e}")
+        flash("Erro ao salvar agendamento.")
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')

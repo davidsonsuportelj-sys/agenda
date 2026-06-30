@@ -1,4 +1,4 @@
-<table class="table">
+<table>
     <thead>
         <tr>
             <th>Cliente</th>
@@ -14,12 +14,10 @@
             <td>{{ item.cliente }}</td>
             <td>{{ item.servico }}</td>
             <td>{{ item.horario }}</td>
+            <td>{{ item.status }}</td>
             <td>
-                <a href="{{ url_for('mudar_status', id=item.id, novo_status='Confirmado') }}" class="btn btn-sm btn-success">Conf</a>
-                <a href="{{ url_for('mudar_status', id=item.id, novo_status='Pendente') }}" class="btn btn-sm btn-warning">Pend</a>
-            </td>
-            <td>
-                <a href="{{ url_for('excluir', id=item.id) }}" class="btn btn-sm btn-danger">Excluir</a>
+                <a href="/mudar_status/{{ item.id }}/Confirmado">Confirmar</a>
+                <a href="/excluir/{{ item.id }}">Excluir</a>
             </td>
         </tr>
         {% endfor %}
