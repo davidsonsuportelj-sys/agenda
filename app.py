@@ -49,8 +49,11 @@ def index():
         query = query.eq("tecnico", current_user.id)
     
     agenda_full = query.execute().data
+    
+    # Cálculos para o Dashboard
     total_pendentes = len([item for item in agenda_full if item['status'] == 'Pendente'])
     total_concluidos = len([item for item in agenda_full if item['status'] == 'Concluído'])
+    total_cancelados = len([item for item in agenda_full if item['status'] == 'Cancelado'])
     
     if status_filtro != 'Todos':
         agenda = [item for item in agenda_full if item['status'] == status_filtro]
@@ -60,7 +63,8 @@ def index():
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     return render_template('index.html', agenda=agenda, role=current_user.role, 
                            user_id=current_user.id, tecnicos=tecnicos, 
-                           total_pendentes=total_pendentes, total_concluidos=total_concluidos)
+                           total_pendentes=total_pendentes, total_concluidos=total_concluidos,
+                           total_cancelados=total_cancelados)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
