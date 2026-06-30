@@ -1,18 +1,38 @@
-<tbody>
-    {% for item in agenda %}
-    <tr>
-        <td>{{ item.cliente }}</td>
-        <td>{{ item.servico }}</td>
-        <td>{{ item.horario }}</td>
-        <td>{{ item.status }}</td>
-        <td>
-            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Confirmado') }}">Conf</a>
-            <a href="{{ url_for('excluir', id=item.id) }}">Excluir</a>
-        </td>
-    </tr>
-    {% else %}
-    <tr>
-        <td colspan="5">Nenhum agendamento encontrado no banco de dados.</td>
-    </tr>
-    {% endfor %}
-</tbody>
+<div class="filtros">
+    <input type="text" id="filtro" onkeyup="filtrarTabela()" placeholder="Buscar cliente...">
+</div>
+
+<a href="#modal-agendar" class="btn-novo">➕ Novo Agendamento</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Cliente</th><th>Serviço</th><th>Horário</th><th>Status</th><th>Ações</th>
+        </tr>
+    </thead>
+    <tbody id="tabela-agenda">
+        {% for item in agenda %}
+        <tr>
+            <td>{{ item.cliente }}</td>
+            <td>{{ item.servico }}</td>
+            <td>{{ item.horario }}</td>
+            <td>{{ item.status }}</td>
+            <td>
+                <a href="/mudar_status/{{ item.id }}/Confirmado">✅</a>
+                <a href="/excluir/{{ item.id }}">🗑️</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function filtrarTabela() {
+    let input = document.getElementById("filtro").value.toUpperCase();
+    let trs = document.getElementById("tabela-agenda").getElementsByTagName("tr");
+    for (let i = 0; i < trs.length; i++) {
+        let txt = trs[i].textContent || trs[i].innerText;
+        trs[i].style.display = txt.toUpperCase().indexOf(input) > -1 ? "" : "none";
+    }
+}
+</script>

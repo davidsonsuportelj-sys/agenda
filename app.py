@@ -32,36 +32,21 @@ def login():
         pass_in = request.form.get('password')
         try:
             response = supabase.table("usuarios").select("username, password").execute()
-            encontrado = False
             for u in response.data:
                 if u['username'].strip() == user_in.strip() and u['password'].strip() == pass_in.strip():
-                    encontrado = True
-                    break
-            if encontrado:
-                login_user(User(user_in))
-                return redirect(url_for('index'))
-            else:
-                flash('Usuário ou senha inválidos!')
+                    login_user(User(user_in))
+                    return redirect(url_for('index'))
+            flash('Usuário ou senha inválidos!')
         except Exception as e:
-            print(f"ERRO LOGIN: {e}")
             flash('Erro de conexão!')
     return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
 
 @app.route('/')
 @login_required
 def index():
-    try:
-        response = supabase.table("agendamentos").select("*").execute()
-        agenda = response.data
-    except:
-        agenda = []
-    return render_template('index.html', agenda=agenda)
+    # Busca agendamentos. Se a tabela no Supabase estiver vazia, ele retorna []
+    response = supabase.table("agendamentos").select("*").execute()
+    return render_template('index.html', agenda=response.data)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
@@ -85,6 +70,12 @@ def excluir(id):
 def mudar_status(id, novo_status):
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
     return redirect(url_for('index'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
