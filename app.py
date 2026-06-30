@@ -54,24 +54,33 @@ def index(status_filtro=None):
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    supabase.table("agendamentos").insert({
-        "cliente": request.form.get('cliente'), 
-        "servico": request.form.get('servico'), 
-        "horario": request.form.get('horario'),
-        "status": "Pendente"
-    }).execute()
+    try:
+        supabase.table("agendamentos").insert({
+            "cliente": request.form.get('cliente'), 
+            "servico": request.form.get('servico'), 
+            "horario": request.form.get('horario'),
+            "status": "Pendente"
+        }).execute()
+    except Exception as e:
+        print(f"Erro ao salvar: {e}")
     return redirect(url_for('index'))
 
-@app.route('/excluir/<int:id>')
+@app.route('/excluir/<id>')
 @login_required
 def excluir(id):
-    supabase.table("agendamentos").delete().eq("id", id).execute()
+    try:
+        supabase.table("agendamentos").delete().eq("id", id).execute()
+    except Exception as e:
+        print(f"Erro ao excluir: {e}")
     return redirect(url_for('index'))
 
-@app.route('/mudar_status/<int:id>/<novo_status>')
+@app.route('/mudar_status/<id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
-    supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
+    try:
+        supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
+    except Exception as e:
+        print(f"Erro ao mudar status: {e}")
     return redirect(url_for('index'))
 
 @app.route('/logout')
