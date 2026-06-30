@@ -2,49 +2,36 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Agenda</title>
+    <title>Sistema de OS</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        .container { display: flex; gap: 40px; }
-        .form-area { width: 300px; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9; }
+        .container { display: flex; gap: 30px; }
+        .form-area { width: 320px; border: 1px solid #ccc; padding: 20px; border-radius: 8px; background: #f4f4f4; }
         .table-area { flex-grow: 1; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        .filtros { margin-bottom: 20px; font-weight: bold; }
-        .filtros a { margin-right: 15px; text-decoration: none; color: #007bff; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #333; color: white; }
     </style>
 </head>
 <body>
-
-    <h1>Gerenciamento de Agenda</h1>
-
+    <h1>Ordem de Serviço Técnica</h1>
     <div class="container">
         <div class="form-area">
-            <h3>Novo Agendamento</h3>
+            <h3>Nova OS</h3>
             <form action="/agendar" method="POST">
-                <input type="text" name="nome" placeholder="Cliente" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
-                <input type="text" name="servico" placeholder="Serviço" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
-                <input type="text" name="horario" placeholder="Horário" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
-                <button type="submit" style="width: 95%; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer;">Agendar</button>
+                <input type="text" name="cliente" placeholder="Nome do Cliente" required style="width: 90%; margin-bottom: 10px;"><br>
+                <input type="text" name="servico" placeholder="Equipamento/Serviço" required style="width: 90%; margin-bottom: 10px;"><br>
+                <input type="text" name="horario" placeholder="Data/Hora" required style="width: 90%; margin-bottom: 10px;"><br>
+                <button type="submit" style="width: 95%; padding: 10px; background: #007bff; color: white; border: none;">Registrar OS</button>
             </form>
-            <br>
-            <a href="/logout">Sair do Sistema</a>
         </div>
-
         <div class="table-area">
-            <div class="filtros">
-                Filtrar: 
-                <a href="/">Todos</a> | 
-                <a href="/Pendente">Pendentes</a> | 
-                <a href="/Confirmado">Confirmados</a>
+            <div>
+                Filtro: <a href="/">Todos</a> | <a href="/Pendente">Pendentes</a> | <a href="/Confirmado">Confirmados</a>
             </div>
-
             <table>
                 <thead>
-                    <tr>
-                        <th>Cliente</th><th>Serviço</th><th>Horário</th><th>Status</th><th>Ações</th>
-                    </tr>
+                    <tr><th>Cliente</th><th>Serviço</th><th>Data/Hora</th><th>Status</th><th>Ações</th></tr>
                 </thead>
                 <tbody>
                     {% for item in agenda %}
@@ -58,15 +45,10 @@
                             <a href="/excluir/{{ item.id }}">🗑️</a>
                         </td>
                     </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" style="text-align: center;">Nenhum agendamento encontrado.</td>
-                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-
 </body>
 </html>

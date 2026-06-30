@@ -37,8 +37,8 @@ def login():
                     login_user(User(user_in))
                     return redirect(url_for('index'))
             flash('Usuário ou senha inválidos!')
-        except Exception as e:
-            print(f"Erro no login: {e}")
+        except Exception:
+            flash('Erro de conexão!')
     return render_template('login.html')
 
 @app.route('/')
@@ -48,22 +48,18 @@ def index(status_filtro=None):
     query = supabase.table("agendamentos").select("*")
     if status_filtro:
         query = query.eq("status", status_filtro)
-    
     response = query.execute()
-    return render_template('index.html', agenda=response.data, filtro_atual=status_filtro)
+    return render_template('index.html', agenda=response.data)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    try:
-        supabase.table("agendamentos").insert({
-            "cliente": request.form.get('nome'), 
-            "servico": request.form.get('servico'), 
-            "horario": request.form.get('horario'),
-            "status": "Pendente"
-        }).execute()
-    except Exception as e:
-        print(f"ERRO: {e}")
+    supabase.table("agendamentos").insert({
+        "cliente": request.form.get('cliente'), 
+        "servico": request.form.get('servico'), 
+        "horario": request.form.get('horario'),
+        "status": "Pendente"
+    }).execute()
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')
