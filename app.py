@@ -4,16 +4,18 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
+# Carrega do .env (localmente ou no Render)
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "uma_chave_muito_segura_para_sessao")
+app.secret_key = os.getenv("SECRET_KEY")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-url = "https://oeqqjyhgtrfexbsaufuo.supabase.co"
+# Busca as configurações das variáveis de ambiente
+url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
 
@@ -28,29 +30,28 @@ def load_user(user_id):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username_input = request.form.get('username').strip() # .strip() remove espaços extras
-        password_input = request.form.get('password').strip()
+        user_in = request.form.get('username')
+        pass_in = request.form.get('password')
         
         try:
-            # Buscamos APENAS pelo usuário
-            response = supabase.table("usuarios").select("*").eq("username", username_input).execute()
+            # Busca no Supabase
+            response = supabase.table("usuarios").select("username, password").execute()
             
-            # Verificamos se encontramos o usuário E se a senha confere
-            if response.data:
-                user_db = response.data[0]
-                if user_db['password'] == password_input:
-                    user = User(username_input)
-                    login_user(user)
-                    return redirect(url_for('index'))
-                else:
-                    print(f"DEBUG: Senha incorreta. Esperada: '{user_db['password']}', Recebida: '{password_input}'")
+            # Verifica credenciais
+            encontrado = False
+            for u in response.data:
+                if u['username'].strip() == user_in.strip() and u['password'].strip() == pass_in.strip():
+                    encontrado = True
+                    break
+            
+            if encontrado:
+                login_user(User(user_in))
+                return redirect(url_for('index'))
             else:
-                print(f"DEBUG: Usuário '{username_input}' não encontrado no banco.")
-                
-            flash('Usuário ou senha inválidos!')
+                flash('Usuário ou senha inválidos!')
         except Exception as e:
-            print(f"DEBUG: Erro de banco: {e}")
-            flash('Erro ao conectar ao banco.')
+            print(f"Erro: {e}")
+            flash('Erro ao conectar ao banco!')
             
     return render_template('login.html')
 
@@ -63,21 +64,11 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    try:
-        response = supabase.table("agendamentos").select("*").execute()
-        agenda = response.data
-    except:
-        agenda = []
-    return render_template('index.html', agenda=agenda)
+    return render_template('index.html', agenda=[])
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    supabase.table("agendamentos").insert({
-        "cliente": request.form.get('nome'), 
-        "servico": request.form.get('servico'), 
-        "horario": request.form.get('horario')
-    }).execute()
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
