@@ -12,11 +12,12 @@
         .btn-concluir { padding: 5px 10px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; }
         .btn-concluir:hover { background: #5a6268; }
         .status-concluido { color: green; font-weight: bold; }
+        .form-footer { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+        .btn-sair { color: #dc3545; text-decoration: none; font-size: 14px; }
     </style>
 </head>
 <body>
     <h1>Bem-vindo, {{ user_id }} ({{ role }})</h1>
-    <a href="/logout">Sair</a>
 
     <div class="container">
         {% if role == 'admin' %}
@@ -36,18 +37,25 @@
 
                 <select name="prioridade" style="width: 93%;"><option>Baixa</option><option>Média</option><option>Alta</option></select><br><br>
                 <textarea name="obs" placeholder="Observações" style="width: 90%;"></textarea><br><br>
-                <button type="submit">Agendar</button>
+                
+                <div class="form-footer">
+                    <button type="submit">Agendar</button>
+                    <a href="/logout" class="btn-sair">Sair</a>
+                </div>
             </form>
         </div>
+        {% else %}
+            <a href="/logout" class="btn-sair">Sair do Sistema</a>
         {% endif %}
 
         <div class="table-area">
             <h3>Demandas</h3>
             <table>
-                <thead><tr><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>
                     {% for item in agenda %}
                     <tr>
+                        <td>{{ item.horario.replace('T', ' ')[:16] }}</td>
                         <td>{{ item.cliente }}</td>
                         <td>{{ item.servico }}</td>
                         <td>
