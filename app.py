@@ -24,10 +24,13 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Busca o usuário e o cargo (role) no Supabase
-    response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
-    if response.data:
-        return User(response.data['username'], response.data['role'])
+    try:
+        response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
+        if response.data:
+            role = response.data.get('role', 'tecnico')
+            return User(response.data['username'], role)
+    except Exception as e:
+        print(f"Erro no load_user: {e}")
     return None
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -37,7 +40,8 @@ def login():
         pass_in = request.form.get('password')
         response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
         if response.data and response.data['password'] == pass_in:
-            login_user(User(response.data['username'], response.data['role']))
+            role = response.data.get('role', 'tecnico')
+            login_user(User(response.data['username'], role))
             return redirect(url_for('index'))
         flash('Usuário ou senha inválidos!')
     return render_template('login.html')
