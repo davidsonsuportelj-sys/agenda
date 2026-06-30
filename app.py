@@ -1,4 +1,5 @@
 import os
+import requests
 from flask import Flask, render_template, request, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from supabase import create_client
@@ -8,6 +9,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
+
+# Configurações Z-API
+ZAPI_INSTANCE_ID = os.getenv("ZAPI_INSTANCE_ID")
+ZAPI_TOKEN = os.getenv("ZAPI_TOKEN")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -28,6 +33,14 @@ def registrar_log(os_id, acao):
         "os_id": os_id,
         "acao": acao
     }).execute()
+
+def enviar_whatsapp(telefone, mensagem):
+    url = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
+    payload = {"phone": telefone, "message": mensagem}
+    try:
+        requests.post(url, json=payload)
+    except Exception as e:
+        print(f"Erro ao enviar Z-API: {e}")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -58,15 +71,11 @@ def index():
         query = query.eq("vendedor", current_user.id)
     
     agenda_full = query.execute().data
-    
     total_pendentes = len([item for item in agenda_full if item['status'] == 'Pendente'])
     total_concluidos = len([item for item in agenda_full if item['status'] == 'Concluído'])
     total_cancelados = len([item for item in agenda_full if item['status'] == 'Cancelado'])
     
-    if status_filtro != 'Todos':
-        agenda = [item for item in agenda_full if item['status'] == status_filtro]
-    else:
-        agenda = agenda_full
+    agenda = [item for item in agenda_full if item['status'] == status_filtro] if status_filtro != 'Todos' else agenda_full
     
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
@@ -79,8 +88,7 @@ def index():
 @app.route('/logs')
 @login_required
 def ver_logs():
-    if current_user.role != 'admin':
-        return "Acesso negado", 403
+    if current_user.role != 'admin': return "Acesso negado", 403
     logs = supabase.table("logs_os").select("*").order("data", desc=True).execute().data
     return render_template('logs.html', logs=logs)
 
@@ -88,17 +96,26 @@ def ver_logs():
 @login_required
 def agendar():
     if current_user.role in ['admin', 'vendedor']:
+        tec_nome = request.form.get('tecnico')
         res = supabase.table("agendamentos").insert({
             "cliente": request.form.get('cliente'), 
             "servico": request.form.get('servico'), 
             "horario": request.form.get('horario'),
-            "tecnico": request.form.get('tecnico'),
+            "tecnico": tec_nome,
             "vendedor": request.form.get('vendedor') if current_user.role == 'admin' else current_user.id,
             "prioridade": request.form.get('prioridade'),
             "obs": request.form.get('obs'),
             "status": "Pendente"
         }).execute()
+        
         registrar_log(res.data[0]['id'], "Criou nova OS")
+        
+        # Disparo WhatsApp
+        tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
+        if tec_data.data and tec_data.data.get('telefone'):
+            msg = f"🔔 *Nova OS!*\nCliente: {request.form.get('cliente')}\nServiço: {request.form.get('servico')}"
+            enviar_whatsapp(tec_data.data['telefone'], msg)
+            
     return redirect(url_for('index'))
 
 @app.route('/mudar_status/<id>/<novo_status>')
