@@ -42,40 +42,28 @@ def login():
     return render_template('login.html')
 
 @app.route('/')
+@app.route('/<status_filtro>')
 @login_required
-def index():
-    try:
-        response = supabase.table("agendamentos").select("*").execute()
-        return render_template('index.html', agenda=response.data)
-    except Exception as e:
-        print(f"Erro ao carregar: {e}")
-        return render_template('index.html', agenda=[])
+def index(status_filtro=None):
+    query = supabase.table("agendamentos").select("*")
+    if status_filtro:
+        query = query.eq("status", status_filtro)
+    
+    response = query.execute()
+    return render_template('index.html', agenda=response.data, filtro_atual=status_filtro)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    nome = request.form.get('nome')
-    servico = request.form.get('servico')
-    horario = request.form.get('horario')
-    
-    # Validação simples
-    if not nome or not servico or not horario:
-        flash("Todos os campos são obrigatórios!")
-        return redirect(url_for('index'))
-
     try:
-        dados = {
-            "cliente": nome, 
-            "servico": servico, 
-            "horario": horario,
+        supabase.table("agendamentos").insert({
+            "cliente": request.form.get('nome'), 
+            "servico": request.form.get('servico'), 
+            "horario": request.form.get('horario'),
             "status": "Pendente"
-        }
-        response = supabase.table("agendamentos").insert(dados).execute()
-        print(f"RESPOSTA DO SUPABASE: {response}")
+        }).execute()
     except Exception as e:
-        print(f"ERRO DE INSERÇÃO: {e}")
-        flash("Erro ao salvar no banco.")
-    
+        print(f"ERRO: {e}")
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')
