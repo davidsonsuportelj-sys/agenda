@@ -4,18 +4,15 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from supabase import create_client
 from dotenv import load_dotenv
 
-# Carrega variáveis de ambiente
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
-# Configuração do Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Configuração do Supabase
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
@@ -59,18 +56,18 @@ def index():
 @login_required
 def agendar():
     try:
-        # Tenta inserir no Supabase
-        supabase.table("agendamentos").insert({
+        dados = {
             "cliente": request.form.get('nome'), 
             "servico": request.form.get('servico'), 
             "horario": request.form.get('horario'),
             "status": "Pendente"
-        }).execute()
-        flash("Agendamento realizado!")
+        }
+        response = supabase.table("agendamentos").insert(dados).execute()
+        print(f"DEBUG SUPABASE RESPONSE: {response}")
+        flash("Agendamento processado.")
     except Exception as e:
-        # Se falhar, printamos o erro nos logs do Render para você ver
-        print(f"ERRO AO AGENDAR NO SUPABASE: {e}")
-        flash("Erro ao salvar no banco. Verifique as permissões (RLS).")
+        print(f"ERRO CRÍTICO AO AGENDAR: {e}")
+        flash("Erro ao salvar no banco.")
     return redirect(url_for('index'))
 
 @app.route('/excluir/<int:id>')
