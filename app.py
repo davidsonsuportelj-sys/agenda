@@ -128,8 +128,21 @@ def mudar_status(id, novo_status):
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
+    # 1. Busca dados da OS antes de cancelar
+    os_data = supabase.table("agendamentos").select("tecnico, cliente, servico").eq("id", id).single().execute()
+    
+    # 2. Atualiza para Cancelado
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
     registrar_log(id, "Cancelou a OS")
+    
+    # 3. Envia notificação se o técnico existir
+    if os_data.data:
+        tec_nome = os_data.data.get('tecnico')
+        tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
+        if tec_data.data and tec_data.data.get('telefone'):
+            msg = f"🚫 *Aviso de Cancelamento*\n\nA OS do cliente *{os_data.data.get('cliente')}* ({os_data.data.get('servico')}) foi cancelada."
+            enviar_whatsapp(tec_data.data['telefone'], msg)
+            
     return redirect(url_for('index'))
 
 @app.route('/logout')
