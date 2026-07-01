@@ -38,16 +38,24 @@ def registrar_log(os_id, acao):
         print(f"Erro ao registrar log: {e}")
 
 def enviar_whatsapp(telefone, mensagem):
-    # DIAGNÓSTICO DE TOKEN
-    print(f"DEBUG: Token carregado: '{ZAPI_TOKEN}'")
-    print(f"DEBUG: Instance ID carregado: '{ZAPI_INSTANCE_ID}'")
+    # Log de diagnóstico para o Render
+    print(f"DEBUG: Enviando para {telefone} | Instância: {ZAPI_INSTANCE_ID}")
     
     url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
-    payload = {"phone": telefone, "message": mensagem}
+    
+    headers = {
+        "Client-Token": ZAPI_TOKEN,
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "phone": telefone,
+        "message": mensagem
+    }
     
     try:
-        response = requests.post(url_zapi, json=payload)
-        print(f"DEBUG Z-API Resposta: {response.status_code} - {response.text}")
+        response = requests.post(url_zapi, json=payload, headers=headers)
+        print(f"DEBUG Z-API: Status {response.status_code} | Resposta: {response.text}")
     except Exception as e:
         print(f"Erro ao comunicar com Z-API: {e}")
 
