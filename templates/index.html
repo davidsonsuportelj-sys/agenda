@@ -21,8 +21,9 @@
         .row-pendente { background-color: #fffbeb; }
         .row-concluido { background-color: #f0fdf4; }
         .row-cancelado { background-color: #fef2f2; }
+        .row-reagendado { background-color: #dbeafe; }
         .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
-        .text-pendente { color: #d97706; } .text-concluido { color: #16a34a; } .text-cancelado { color: #dc2626; }
+        .text-pendente { color: #d97706; } .text-concluido { color: #16a34a; } .text-cancelado { color: #dc2626; } .text-reagendado { color: #1e40af; }
         .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 180px; padding: 10px; }
@@ -35,11 +36,13 @@
 <body>
     <div class="header">
         <h1>Agenda de Serviços</h1>
-        <div>Bem-vindo, <strong>{{ current_user.id }}</strong> 
+        <div>
+            Bem-vindo, <strong>{{ current_user.id }}</strong> 
             {% if role == 'admin' %}| <a href="{{ url_for('ver_logs') }}">Ver Logs</a>{% endif %}
             | <a href="{{ url_for('logout') }}">Sair</a>
         </div>
     </div>
+
     {% if role in ['admin', 'vendedor'] %}
     <div class="card">
         <h3>Nova Ordem de Serviço</h3>
@@ -57,31 +60,34 @@
         </form>
     </div>
     {% endif %}
+
     <div class="table-responsive">
         <table>
             <tr><th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
             {% for item in agenda %}
-            <tr class="{% if item.status == 'Pendente' %}row-pendente{% elif item.status == 'Concluído' %}row-concluido{% elif item.status == 'Cancelado' %}row-cancelado{% endif %}">
+            <tr class="{% if item.status == 'Pendente' %}row-pendente{% elif item.status == 'Concluído' %}row-concluido{% elif item.status == 'Cancelado' %}row-cancelado{% elif item.status == 'Reagendado' %}row-reagendado{% endif %}">
                 <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td>
                 <td>{{ item.horario[8:10] }}/{{ item.horario[5:7] }}/{{ item.horario[0:4] }} {{ item.horario[11:16] }}</td>
                 <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td>
                 <td class="obs-cell" title="{{ item.obs }}">{{ item.obs }}</td>
-                <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">{{ item.status }}</span></td>
+                <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% elif item.status == 'Reagendado' %}text-reagendado{% endif %}">{{ item.status }}</span></td>
                 <td>
-                    {% if item.status == 'Pendente' %}
                     <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; color: #1e293b; padding: 5px 10px; cursor: pointer;">Ações ▼</button>
                         <div class="dropup-content">
-                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
-                            {% if role != 'tecnico' %}
-                            <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
-                            <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
-                                <input type="datetime-local" name="nova_data" required style="width: 100%; margin-bottom: 5px; font-size: 0.8rem;">
-                                <button type="submit" style="width: 100%; height: 30px; font-size: 0.75rem;">Reagendar</button>
-                            </form>
+                            {% if item.status != 'Concluído' and item.status != 'Cancelado' %}
+                                <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
+                                {% if role != 'tecnico' %}
+                                    <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
+                                    <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
+                                        <input type="datetime-local" name="nova_data" required style="width: 100%; margin-bottom: 5px; font-size: 0.8rem;">
+                                        <button type="submit" style="width: 100%; height: 30px; font-size: 0.75rem;">Reagendar</button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <span>Sem ações</span>
                             {% endif %}
                         </div>
                     </div>
-                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
