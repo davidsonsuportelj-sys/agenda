@@ -38,12 +38,16 @@ def registrar_log(os_id, acao):
         print(f"Erro ao registrar log: {e}")
 
 def enviar_whatsapp(telefone, mensagem):
+    # DIAGNÓSTICO DE TOKEN
+    print(f"DEBUG: Token carregado: '{ZAPI_TOKEN}'")
+    print(f"DEBUG: Instance ID carregado: '{ZAPI_INSTANCE_ID}'")
+    
     url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
     payload = {"phone": telefone, "message": mensagem}
+    
     try:
         response = requests.post(url_zapi, json=payload)
-        # ESTE PRINT É O QUE VAMOS OLHAR NO LOG DO RENDER
-        print(f"DEBUG Z-API: Status {response.status_code} | Resposta: {response.text}")
+        print(f"DEBUG Z-API Resposta: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Erro ao comunicar com Z-API: {e}")
 
@@ -90,6 +94,13 @@ def index():
                            total_pendentes=total_pendentes, total_concluidos=total_concluidos,
                            total_cancelados=total_cancelados)
 
+@app.route('/logs')
+@login_required
+def ver_logs():
+    if current_user.role != 'admin': return "Acesso negado", 403
+    logs = supabase.table("logs_os").select("*").order("data", desc=True).execute().data
+    return render_template('logs.html', logs=logs)
+
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
@@ -108,12 +119,18 @@ def agendar():
         
         registrar_log(res.data[0]['id'], "Criou nova OS")
         
-        # Disparo WhatsApp
         tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
         if tec_data.data and tec_data.data.get('telefone'):
             msg = f"🔔 *Nova OS!*\nCliente: {request.form.get('cliente')}\nServiço: {request.form.get('servico')}"
             enviar_whatsapp(tec_data.data['telefone'], msg)
             
+    return redirect(url_for('index'))
+
+@app.route('/mudar_status/<id>/<novo_status>')
+@login_required
+def mudar_status(id, novo_status):
+    supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
+    registrar_log(id, f"Alterou status para {novo_status}")
     return redirect(url_for('index'))
 
 @app.route('/cancelar/<id>')
