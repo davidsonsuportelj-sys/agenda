@@ -5,60 +5,54 @@
     <title>Agenda de Serviços</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        .stats { margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .btn { padding: 5px 10px; text-decoration: none; color: white; border-radius: 4px; }
-        .btn-finalizar { background-color: green; }
-        .btn-cancelar { background-color: red; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        
+        /* Dropup Menu */
+        .dropup { position: relative; display: inline-block; }
+        .dropup-content { 
+            display: none; position: absolute; bottom: 100%; left: 0; 
+            background-color: #f9f9f9; min-width: 120px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1; border: 1px solid #ddd;
+        }
+        .dropup:hover .dropup-content { display: block; }
+        .dropup-content a { color: black; padding: 8px; display: block; text-decoration: none; }
+        .dropup-content a:hover { background-color: #f1f1f1; }
+        
+        /* Botões */
+        .btn-main { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; background-color: #007bff; color: white; }
     </style>
 </head>
 <body>
 
     <h1>Bem-vindo, {{ current_user.id }} ({{ role }})</h1>
 
-    <div class="stats">
-        <a href="{{ url_for('index', status='Todos') }}">Todos</a> |
-        <a href="{{ url_for('index', status='Pendente') }}">Pendentes</a> |
-        <a href="{{ url_for('index', status='Concluído') }}">Concluídos</a> |
-        <a href="{{ url_for('index', status='Cancelado') }}">Cancelados</a>
-        <br><br>
-        <strong>Pendentes:</strong> {{ total_pendentes }} | 
-        <strong>Concluídos:</strong> {{ total_concluidos }} | 
-        <strong>Cancelados:</strong> {{ total_cancelados }}
-    </div>
-
-    <a href="{{ url_for('logout') }}">Sair do Sistema</a>
-
     <table>
         <tr>
-            <th>Vendedor</th>
-            <th>Técnico</th>
-            <th>Data/Hora</th>
             <th>Cliente</th>
             <th>Serviço</th>
-            <th>Prioridade</th>
-            <th>Observação</th>
             <th>Status</th>
             <th>Ações</th>
         </tr>
         {% for item in agenda %}
         <tr>
-            <td>{{ item.vendedor }}</td>
-            <td>{{ item.tecnico }}</td>
-            <td>{{ item.horario }}</td>
             <td>{{ item.cliente }}</td>
             <td>{{ item.servico }}</td>
-            <td>{{ item.prioridade }}</td>
-            <td>{{ item.obs }}</td>
             <td>{{ item.status }}</td>
             <td>
                 {% if item.status == 'Pendente' %}
-                    <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" class="btn btn-finalizar">Finalizar</a>
-                    
-                    {% if role != 'tecnico' %}
-                        <a href="{{ url_for('cancelar', id=item.id) }}" class="btn btn-cancelar" onclick="return confirm('Tem certeza?')">Cancelar</a>
-                    {% endif %}
+                    <div class="dropup">
+                        <button class="btn-main">Ações ▼</button>
+                        <div class="dropup-content">
+                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" 
+                               onclick="return confirm('Deseja confirmar a finalização desta OS?')">Confirmar Finalizar</a>
+                            
+                            {% if role != 'tecnico' %}
+                            <a href="{{ url_for('cancelar', id=item.id) }}" style="color: red;"
+                               onclick="return confirm('Tem certeza que deseja CANCELAR esta OS?')">Confirmar Cancelar</a>
+                            {% endif %}
+                        </div>
+                    </div>
                 {% endif %}
             </td>
         </tr>
