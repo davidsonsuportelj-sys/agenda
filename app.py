@@ -28,19 +28,24 @@ class User(UserMixin):
         self.role = role
 
 def registrar_log(os_id, acao):
-    supabase.table("logs_os").insert({
-        "usuario": current_user.id,
-        "os_id": os_id,
-        "acao": acao
-    }).execute()
+    try:
+        supabase.table("logs_os").insert({
+            "usuario": current_user.id,
+            "os_id": os_id,
+            "acao": acao
+        }).execute()
+    except Exception as e:
+        print(f"Erro ao registrar log: {e}")
 
 def enviar_whatsapp(telefone, mensagem):
-    url = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
+    url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
     payload = {"phone": telefone, "message": mensagem}
     try:
-        requests.post(url, json=payload)
+        response = requests.post(url_zapi, json=payload)
+        # ESTE PRINT É O QUE VAMOS OLHAR NO LOG DO RENDER
+        print(f"DEBUG Z-API: Status {response.status_code} | Resposta: {response.text}")
     except Exception as e:
-        print(f"Erro ao enviar Z-API: {e}")
+        print(f"Erro ao comunicar com Z-API: {e}")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -85,13 +90,6 @@ def index():
                            total_pendentes=total_pendentes, total_concluidos=total_concluidos,
                            total_cancelados=total_cancelados)
 
-@app.route('/logs')
-@login_required
-def ver_logs():
-    if current_user.role != 'admin': return "Acesso negado", 403
-    logs = supabase.table("logs_os").select("*").order("data", desc=True).execute().data
-    return render_template('logs.html', logs=logs)
-
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
@@ -118,24 +116,13 @@ def agendar():
             
     return redirect(url_for('index'))
 
-@app.route('/mudar_status/<id>/<novo_status>')
-@login_required
-def mudar_status(id, novo_status):
-    supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
-    registrar_log(id, f"Alterou status para {novo_status}")
-    return redirect(url_for('index'))
-
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
-    # 1. Busca dados da OS antes de cancelar
     os_data = supabase.table("agendamentos").select("tecnico, cliente, servico").eq("id", id).single().execute()
-    
-    # 2. Atualiza para Cancelado
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
     registrar_log(id, "Cancelou a OS")
     
-    # 3. Envia notificação se o técnico existir
     if os_data.data:
         tec_nome = os_data.data.get('tecnico')
         tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
