@@ -7,16 +7,15 @@
     <style>
         body { font-family: sans-serif; padding: 10px; font-size: 14px; }
         .form-container { background: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
-        /* Permite que os campos fiquem um embaixo do outro no mobile */
         .form-group { display: inline-block; margin: 5px; vertical-align: top; width: 45%; }
         input, select { padding: 8px; width: 100%; box-sizing: border-box; }
         
-        /* Container de rolagem para a tabela */
+        /* Responsividade Tabela */
         .table-responsive { overflow-x: auto; width: 100%; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         
-        /* Cores */
+        /* Cores de Linha e Texto por Status */
         .row-pendente { background-color: #fff9e6; } 
         .row-concluido { background-color: #e6fffa; } 
         .row-cancelado { background-color: #ffe6e6; } 
@@ -25,27 +24,29 @@
         .text-concluido { color: green; font-weight: bold; }
         .text-cancelado { color: red; font-weight: bold; }
 
-        /* Dropup */
+        /* Dropup Menu */
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; left: 0; background-color: #f9f9f9; min-width: 100px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2); z-index: 10; border: 1px solid #ddd; }
         .dropup:hover .dropup-content { display: block; }
         .dropup-content a { color: black; padding: 10px; display: block; text-decoration: none; }
+        .dropup-content a:hover { background-color: #f1f1f1; }
         .btn-main { padding: 5px 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h1>Agenda</h1>
-    <a href="{{ url_for('logout') }}">Sair</a>
+    <h1>Bem-vindo, {{ current_user.id }} ({{ role }})</h1>
+    <a href="{{ url_for('logout') }}">Sair do Sistema</a>
 
     {% if role in ['admin', 'vendedor'] %}
     <div class="form-container">
+        <h3>Nova Ordem de Serviço</h3>
         <form action="{{ url_for('agendar') }}" method="POST">
             <div class="form-group"><label>Cliente</label><input type="text" name="cliente" required></div>
             <div class="form-group"><label>Serviço</label><input type="text" name="servico" required></div>
             <div class="form-group"><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
             <div class="form-group"><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
-            <div class="form-group"><label>Obs</label><input type="text" name="obs"></div>
+            <div class="form-group"><label>Observação</label><input type="text" name="obs"></div>
             <div class="form-group"><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
             {% if role == 'admin' %}
             <div class="form-group"><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
@@ -58,12 +59,12 @@
     <div class="table-responsive">
         <table>
             <tr>
-                <th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th>
+                <th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th>
             </tr>
             {% for item in agenda %}
             <tr class="{% if item.status == 'Pendente' %}row-pendente{% elif item.status == 'Concluído' %}row-concluido{% elif item.status == 'Cancelado' %}row-cancelado{% endif %}">
                 <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td><td>{{ item.horario }}</td>
-                <td>{{ item.cliente }}</td><td>{{ item.servico }}</td>
+                <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td><td>{{ item.obs }}</td>
                 <td class="{% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">
                     {{ item.status }}
                 </td>
