@@ -42,15 +42,11 @@ def enviar_whatsapp(telefone, mensagem):
     except Exception as e:
         print(f"Erro ao comunicar com Z-API: {e}")
 
-# Função para notificar Admin e Vendedor
-def notificar_admin_vendedor(os_id, cliente, servico):
-    os_data = supabase.table("agendamentos").select("vendedor").eq("id", os_id).single().execute()
-    vendedor_username = os_data.data.get('vendedor')
-    
-    # Busca telefones
+# Notifica Admin e Vendedores ao finalizar
+def notificar_conclusao(os_id, cliente, servico):
+    # Busca telefones de Admins e Vendedores
     usuarios_alvo = supabase.table("usuarios").select("telefone").in_("role", ["admin", "vendedor"]).execute().data
-    
-    msg = f"✅ *OS Finalizada!*\nOS ID: {os_id}\nCliente: {cliente}\nServiço: {servico}"
+    msg = f"✅ *OS Finalizada!*\nID: {os_id}\nCliente: {cliente}\nServiço: {servico}"
     
     for user in usuarios_alvo:
         if user.get('telefone'):
@@ -106,11 +102,10 @@ def agendar():
 @app.route('/mudar_status/<id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
-    # Se o técnico mudar para 'Concluído', notificamos
     if novo_status == 'Concluído':
         os_data = supabase.table("agendamentos").select("cliente, servico").eq("id", id).single().execute()
         if os_data.data:
-            notificar_admin_vendedor(id, os_data.data['cliente'], os_data.data['servico'])
+            notificar_conclusao(id, os_data.data['cliente'], os_data.data['servico'])
     
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
     registrar_log(id, f"Alterou status para {novo_status}")
@@ -119,9 +114,9 @@ def mudar_status(id, novo_status):
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
-    # BLOQUEIO: Técnico não pode cancelar
+    # Bloqueio de acesso para técnicos
     if current_user.role == 'tecnico':
-        abort(403) # Erro de acesso negado
+        return "Acesso negado: Técnicos não podem cancelar OS.", 403
         
     os_data = supabase.table("agendamentos").select("tecnico, cliente, servico").eq("id", id).single().execute()
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()

@@ -2,115 +2,68 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de OS - {{ user_id }}</title>
+    <title>Agenda de Serviços</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background-color: #f7f7f7; }
-        .container { display: flex; gap: 20px; }
-        .form-area { width: 300px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e0e0e0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; border-radius: 8px; overflow: hidden; }
-        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
-        
-        input, select, textarea { width: 93%; padding: 10px; border: 1px solid #d1d1d1; border-radius: 8px; margin-bottom: 10px; }
-        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1.5 3.5h9z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
-        select:focus { outline: none; border-color: #ff7a00; box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1); }
-        
-        .dashboard-container { display: flex; gap: 15px; margin-bottom: 20px; }
-        .dashboard-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; width: 130px; text-align: center; }
-        .btn-acao { padding: 6px 12px; color: white; text-decoration: none; border-radius: 6px; font-size: 12px; margin-right: 5px; border: none; cursor: pointer; display: inline-block; }
-        .btn-sair { color: #dc3545; text-decoration: none; font-size: 14px; margin-left: 10px; }
-        .status-concluido { color: green; font-weight: bold; }
-        .status-cancelado { color: red; font-weight: bold; }
-        .form-footer { display: flex; align-items: center; margin-top: 15px; }
-        .label-campo { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        body { font-family: sans-serif; padding: 20px; }
+        .stats { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .btn { padding: 5px 10px; text-decoration: none; color: white; border-radius: 4px; }
+        .btn-finalizar { background-color: green; }
+        .btn-cancelar { background-color: red; }
     </style>
 </head>
 <body>
-    <h1>Bem-vindo, {{ user_id }} ({{ role }})
-        {% if role == 'admin' %}
-            <a href="/logs" style="margin-left: 20px; font-size: 14px; color: #555;">Ver Logs</a>
-        {% endif %}
-    </h1>
 
-    <div class="dashboard-container">
-        <div class="dashboard-card"><strong>Pendentes</strong><br><span style="font-size: 24px;">{{ total_pendentes }}</span></div>
-        <div class="dashboard-card"><strong>Concluídos</strong><br><span style="font-size: 24px;">{{ total_concluidos }}</span></div>
-        <div class="dashboard-card"><strong>Cancelados</strong><br><span style="font-size: 24px; color: red;">{{ total_cancelados }}</span></div>
+    <h1>Bem-vindo, {{ current_user.id }} ({{ role }})</h1>
+
+    <div class="stats">
+        <a href="{{ url_for('index', status='Todos') }}">Todos</a> |
+        <a href="{{ url_for('index', status='Pendente') }}">Pendentes</a> |
+        <a href="{{ url_for('index', status='Concluído') }}">Concluídos</a> |
+        <a href="{{ url_for('index', status='Cancelado') }}">Cancelados</a>
+        <br><br>
+        <strong>Pendentes:</strong> {{ total_pendentes }} | 
+        <strong>Concluídos:</strong> {{ total_concluidos }} | 
+        <strong>Cancelados:</strong> {{ total_cancelados }}
     </div>
 
-    <div style="margin-bottom: 20px;">
-        <a href="/">Todos</a> | <a href="/?status=Pendente">Pendentes</a> | <a href="/?status=Concluído">Concluídos</a> | <a href="/?status=Cancelado">Cancelados</a>
-    </div>
+    <a href="{{ url_for('logout') }}">Sair do Sistema</a>
 
-    <div class="container">
-        {% if role in ['admin', 'vendedor'] %}
-        <div class="form-area">
-            <h3>Nova OS</h3>
-            <form action="/agendar" method="POST">
-                <input type="text" name="cliente" placeholder="Cliente" required>
-                <input type="text" name="servico" placeholder="Serviço" required>
-                <input type="datetime-local" name="horario" required>
-                
-                <label class="label-campo">Técnico:</label>
-                <select name="tecnico" required>
-                    <option value="">Selecione o Técnico...</option>
-                    {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
-                </select>
-
-                {% if role == 'admin' %}
-                <label class="label-campo">Vendedor:</label>
-                <select name="vendedor" required>
-                    <option value="">Selecione o Vendedor...</option>
-                    {% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}
-                </select>
+    <table>
+        <tr>
+            <th>Vendedor</th>
+            <th>Técnico</th>
+            <th>Data/Hora</th>
+            <th>Cliente</th>
+            <th>Serviço</th>
+            <th>Prioridade</th>
+            <th>Observação</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+        {% for item in agenda %}
+        <tr>
+            <td>{{ item.vendedor }}</td>
+            <td>{{ item.tecnico }}</td>
+            <td>{{ item.horario }}</td>
+            <td>{{ item.cliente }}</td>
+            <td>{{ item.servico }}</td>
+            <td>{{ item.prioridade }}</td>
+            <td>{{ item.obs }}</td>
+            <td>{{ item.status }}</td>
+            <td>
+                {% if item.status == 'Pendente' %}
+                    <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" class="btn btn-finalizar">Finalizar</a>
+                    
+                    {% if role != 'tecnico' %}
+                        <a href="{{ url_for('cancelar', id=item.id) }}" class="btn btn-cancelar" onclick="return confirm('Tem certeza?')">Cancelar</a>
+                    {% endif %}
                 {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 
-                <label class="label-campo">Prioridade:</label>
-                <select name="prioridade">
-                    <option>Baixa</option><option>Média</option><option>Alta</option>
-                </select>
-                <textarea name="obs" placeholder="Observações"></textarea>
-                
-                <div class="form-footer">
-                    <button type="submit">Agendar</button>
-                    <a href="/logout" class="btn-sair">Sair</a>
-                </div>
-            </form>
-        </div>
-        {% else %}
-            <a href="/logout" class="btn-sair">Sair do Sistema</a>
-        {% endif %}
-
-        <div class="table-area">
-            <table>
-                <thead>
-                    <tr><th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
-                </thead>
-                <tbody>
-                    {% for item in agenda %}
-                    <tr>
-                        <td>{{ item.vendedor or 'N/A' }}</td>
-                        <td>{{ item.tecnico or 'N/A' }}</td>
-                        <td>{{ item.horario.replace('T', ' ')[:16] }}</td>
-                        <td>{{ item.cliente }}</td>
-                        <td>{{ item.servico }}</td>
-                        <td>{{ item.prioridade or '' }}</td>
-                        <td>{{ item.obs or '' }}</td>
-                        <td>
-                            {% if item.status == 'Concluído' %}<span class="status-concluido">✔ Concluído</span>
-                            {% elif item.status == 'Cancelado' %}<span class="status-cancelado">✘ Cancelado</span>
-                            {% else %}{{ item.status }}{% endif %}
-                        </td>
-                        <td>
-                            {% if item.status != 'Concluído' and item.status != 'Cancelado' %}
-                                <a href="/mudar_status/{{ item.id }}/Concluído" class="btn-acao" style="background-color: green;">Finalizar</a>
-                                <a href="/cancelar/{{ item.id }}" class="btn-acao" style="background-color: #dc3545;" onclick="return confirm('Cancelar esta OS?')">Cancelar</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
 </body>
 </html>
