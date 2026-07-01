@@ -4,59 +4,72 @@
     <meta charset="UTF-8">
     <title>Agenda de Serviços</title>
     <style>
-        /* Estilos básicos */
         body { font-family: sans-serif; padding: 20px; }
-        .form-group { display: inline-block; margin-right: 10px; vertical-align: top; }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 2px; }
-        input, select { padding: 8px; width: 150px; }
+        .form-group { display: inline-block; margin: 5px; vertical-align: top; }
+        label { display: block; font-size: 12px; font-weight: bold; }
+        input, select { padding: 8px; width: 140px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        
+        /* Dropup Menu */
+        .dropup { position: relative; display: inline-block; }
+        .dropup-content { display: none; position: absolute; bottom: 100%; left: 0; background-color: #f9f9f9; min-width: 120px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 10; border: 1px solid #ddd; }
+        .dropup:hover .dropup-content { display: block; }
+        .dropup-content a { color: black; padding: 8px; display: block; text-decoration: none; }
+        .dropup-content a:hover { background-color: #f1f1f1; }
+        .btn-main { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; background-color: #007bff; color: white; }
     </style>
 </head>
 <body>
 
     <h1>Bem-vindo, {{ current_user.id }} ({{ role }})</h1>
+    <a href="{{ url_for('logout') }}">Sair do Sistema</a>
 
     {% if role in ['admin', 'vendedor'] %}
-    <section style="background: #f9f9f9; padding: 20px; border: 1px solid #ccc; margin-bottom: 20px;">
+    <section style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
         <h3>Nova Ordem de Serviço</h3>
         <form action="{{ url_for('agendar') }}" method="POST">
-            
-            <div class="form-group">
-                <label>Cliente</label>
-                <input type="text" name="cliente" required>
-            </div>
-
-            <div class="form-group">
-                <label>Serviço</label>
-                <input type="text" name="servico" required>
-            </div>
-
-            <div class="form-group">
-                <label>Data/Hora</label>
-                <input type="date" name="horario" required>
-            </div>
-
-            <div class="form-group">
-                <label>Técnico</label>
-                <select name="tecnico">
-                    {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
-                </select>
-            </div>
-
+            <div class="form-group"><label>Cliente</label><input type="text" name="cliente" required></div>
+            <div class="form-group"><label>Serviço</label><input type="text" name="servico" required></div>
+            <div class="form-group"><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
+            <div class="form-group"><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
+            <div class="form-group"><label>Obs</label><input type="text" name="obs"></div>
+            <div class="form-group"><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
             {% if role == 'admin' %}
-            <div class="form-group">
-                <label>Vendedor</label>
-                <select name="vendedor">
-                    {% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}
-                </select>
-            </div>
+            <div class="form-group"><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
             {% endif %}
-
             <button type="submit" style="margin-top: 18px; padding: 8px 20px;">Agendar</button>
         </form>
     </section>
     {% endif %}
 
-    </body>
+    <table>
+        <tr>
+            <th>Vendedor</th><th>Técnico</th><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th>
+        </tr>
+        {% for item in agenda %}
+        <tr>
+            <td>{{ item.vendedor }}</td>
+            <td>{{ item.tecnico }}</td>
+            <td>{{ item.cliente }}</td>
+            <td>{{ item.servico }}</td>
+            <td>{{ item.status }}</td>
+            <td>
+                {% if item.status == 'Pendente' %}
+                <div class="dropup">
+                    <button class="btn-main">Ações ▼</button>
+                    <div class="dropup-content">
+                        <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" onclick="return confirm('Finalizar?')">Finalizar</a>
+                        {% if role != 'tecnico' %}
+                        <a href="{{ url_for('cancelar', id=item.id) }}" style="color: red;" onclick="return confirm('Cancelar?')">Cancelar</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
 </html>
