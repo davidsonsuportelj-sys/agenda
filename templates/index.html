@@ -11,7 +11,7 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
-        /* Formulário em linha reta com espaçamento ajustável */
+        /* Formulário em linha com espaçamento */
         form { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
         .field-wrapper { flex: 1; min-width: 140px; }
         
@@ -19,11 +19,13 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; height: 42px; }
 
+        /* Tabela com bordas verticais (grid) */
         .table-responsive { overflow-x: auto; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; border: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; border: 1px solid #e2e8f0; }
+        td { padding: 15px; border: 1px solid #e2e8f0; }
         
+        /* Cores de Linha */
         .row-pendente { background-color: #fffbeb; }
         .row-concluido { background-color: #f0fdf4; }
         .row-cancelado { background-color: #fef2f2; }
@@ -35,6 +37,7 @@
         
         .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
 
+        /* Dropup */
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; }
         .dropup:hover .dropup-content { display: block; }
