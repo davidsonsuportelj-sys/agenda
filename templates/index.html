@@ -6,7 +6,7 @@
     <title>Agenda de Serviços</title>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -14,24 +14,26 @@
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
         label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; display: block; }
         input, select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
-        input:focus { border-color: var(--primary); }
-        
-        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { opacity: 0.9; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         .table-responsive { overflow-x: auto; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; }
         td { padding: 15px; border-bottom: 1px solid #f1f5f9; }
         
+        /* Cores de Linha */
         .row-pendente { background-color: #fffbeb; }
         .row-concluido { background-color: #f0fdf4; }
         .row-cancelado { background-color: #fef2f2; }
         
+        /* Status Badge e Tooltip Observação */
         .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
         .text-pendente { color: #d97706; }
         .text-concluido { color: #16a34a; }
         .text-cancelado { color: #dc2626; }
+        
+        .obs-cell { position: relative; cursor: help; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .obs-cell:hover::after { content: attr(data-fulltext); position: absolute; left: 0; top: 100%; z-index: 20; background: #333; color: #fff; padding: 10px; border-radius: 6px; width: 250px; white-space: normal; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-size: 0.85rem; }
 
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; }
@@ -60,7 +62,7 @@
             {% if role == 'admin' %}
             <div><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
             {% endif %}
-            <button type="submit" style="align-self: flex-end;">Agendar</button>
+            <button type="submit">Agendar</button>
         </form>
     </div>
     {% endif %}
@@ -72,7 +74,8 @@
             <tr class="{% if item.status == 'Pendente' %}row-pendente{% elif item.status == 'Concluído' %}row-concluido{% elif item.status == 'Cancelado' %}row-cancelado{% endif %}">
                 <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td>
                 <td>{{ item.horario[8:10] }}/{{ item.horario[5:7] }}/{{ item.horario[0:4] }} {{ item.horario[11:16] }}</td>
-                <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td><td>{{ item.obs }}</td>
+                <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td>
+                <td class="obs-cell" data-fulltext="{{ item.obs }}">{{ item.obs }}</td>
                 <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">{{ item.status }}</span></td>
                 <td>
                     {% if item.status == 'Pendente' %}
