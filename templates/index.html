@@ -5,72 +5,96 @@
     <title>Agenda de Serviços</title>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #ffffff; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        .header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .grid { display: flex; gap: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         form { display: flex; flex-direction: column; gap: 10px; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
         input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
-        button { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; background: var(--white); }
-        th, td { padding: 15px; border: 1px solid #e2e8f0; }
+        button { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .table-responsive { overflow-x: auto; background: var(--white); border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 15px; border: 1px solid #e2e8f0; text-align: left; }
         .row-reagendado { background-color: #dbeafe !important; }
+        .row-reagendado td { border: 1px solid #e2e8f0 !important; }
         .dropup { position: relative; display: inline-block; }
-        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 1px solid #cbd5e1; padding: 10px; z-index: 100; min-width: 150px; }
+        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 1px solid #cbd5e1; padding: 15px; z-index: 999; min-width: 200px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); border-radius: 8px; }
         .dropup:hover .dropup-content { display: block; }
     </style>
 </head>
 <body>
-    <div class="header"><h1>Agenda de Serviços</h1><a href="{{ url_for('logout') }}">Sair</a></div>
+    <div class="header">
+        <h1>Agenda de Serviços</h1>
+        <a href="{{ url_for('logout') }}">Sair</a>
+    </div>
     
     <div class="grid">
-        <div class="card" style="flex:1">
-            <h3>Novo Cliente</h3>
+        <div class="card">
+            <h3>Cadastrar Novo Cliente</h3>
             <form action="{{ url_for('cadastrar_cliente') }}" method="POST">
-                <input type="text" name="nome" placeholder="Nome" required>
+                <input type="text" name="nome" placeholder="Nome do Cliente" required>
                 <input type="tel" name="telefone" placeholder="Telefone">
                 <input type="text" name="endereco" placeholder="Endereço">
-                <button type="submit">Salvar</button>
+                <button type="submit">Salvar Cliente</button>
             </form>
         </div>
-        <div class="card" style="flex:2">
-            <h3>Agendar Serviço</h3>
+        <div class="card">
+            <h3>Nova Ordem de Serviço</h3>
             <form action="{{ url_for('agendar') }}" method="POST">
-                <select name="cliente_id" required>
-                    {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
-                </select>
-                <input type="text" name="servico" placeholder="Serviço" required>
-                <input type="datetime-local" name="horario" required>
-                <select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select>
-                <button type="submit">Agendar</button>
+                <div class="input-group">
+                    <label>Cliente</label>
+                    <select name="cliente_id" required>
+                        {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Serviço</label>
+                    <input type="text" name="servico" required>
+                </div>
+                <div class="input-group">
+                    <label>Data e Hora</label>
+                    <input type="datetime-local" name="horario" required>
+                </div>
+                <div class="input-group">
+                    <label>Técnico</label>
+                    <select name="tecnico">
+                        {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
+                    </select>
+                </div>
+                <button type="submit">Agendar Serviço</button>
             </form>
         </div>
     </div>
 
-    <table>
-        <tr><th>Cliente</th><th>Serviço</th><th>Data</th><th>Status</th><th>Ações</th></tr>
-        {% for item in agenda %}
-        <tr class="{% if item.status == 'Reagendado' %}row-reagendado{% endif %}">
-            <td>{{ item.clientes.nome }}</td>
-            <td>{{ item.servico }}</td>
-            <td>{{ item.horario }}</td>
-            <td>{{ item.status }}</td>
-            <td>
-                {% if item.status not in ['Concluído', 'Cancelado'] %}
-                <div class="dropup"><button>Ações ▼</button>
-                    <div class="dropup-content">
-                        <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
-                        <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
-                        <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
-                            <input type="datetime-local" name="nova_data" required>
-                            <button type="submit">Reagendar</button>
-                        </form>
+    <div class="table-responsive">
+        <table>
+            <tr><th>Cliente</th><th>Serviço</th><th>Data/Hora</th><th>Status</th><th>Ações</th></tr>
+            {% for item in agenda %}
+            <tr class="{% if item.status == 'Reagendado' %}row-reagendado{% endif %}">
+                <td>{{ item.clientes.nome }}</td>
+                <td>{{ item.servico }}</td>
+                <td>{{ item.horario }}</td>
+                <td>{{ item.status }}</td>
+                <td>
+                    {% if item.status != 'Concluído' and item.status != 'Cancelado' %}
+                    <div class="dropup">
+                        <button>Ações ▼</button>
+                        <div class="dropup-content">
+                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" style="display:block; padding:5px 0;">Finalizar</a>
+                            <a href="{{ url_for('cancelar', id=item.id) }}" style="display:block; padding:5px 0;">Cancelar</a>
+                            <form action="{{ url_for('reagendar', id=item.id) }}" method="POST" style="margin-top:10px;">
+                                <input type="datetime-local" name="nova_data" required style="width:100%; margin-bottom:5px;">
+                                <button type="submit" style="width:100%;">Reagendar</button>
+                            </form>
+                        </div>
                     </div>
-                </div>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </body>
 </html>

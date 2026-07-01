@@ -43,7 +43,7 @@ def login():
 @app.route('/')
 @login_required
 def index():
-    # Busca agendamentos com JOIN para pegar o nome do cliente na tabela clientes
+    # Mantive a consulta detalhada para garantir todos os dados
     query = supabase.table("agendamentos").select("*, clientes(nome)")
     if current_user.role == 'tecnico': query = query.eq("tecnico", current_user.id)
     elif current_user.role == 'vendedor': query = query.eq("vendedor", current_user.id)
@@ -51,8 +51,9 @@ def index():
     
     clientes = supabase.table("clientes").select("*").execute().data
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
+    vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
     
-    return render_template('index.html', agenda=agenda, clientes=clientes, tecnicos=tecnicos, role=current_user.role)
+    return render_template('index.html', agenda=agenda, clientes=clientes, tecnicos=tecnicos, vendedores=vendedores, role=current_user.role)
 
 @app.route('/cadastrar_cliente', methods=['POST'])
 @login_required
@@ -74,6 +75,8 @@ def agendar():
             "servico": request.form.get('servico'),
             "horario": request.form.get('horario'),
             "tecnico": request.form.get('tecnico'),
+            "prioridade": request.form.get('prioridade'),
+            "obs": request.form.get('obs'),
             "vendedor": current_user.id,
             "status": "Pendente"
         }).execute()
