@@ -10,7 +10,9 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
+# ID da sua instância
 ZAPI_INSTANCE_ID = os.getenv("ZAPI_INSTANCE_ID")
+# AQUI NO RENDER, COLOQUE O "Client-Token" (aquele código longo da sua instância)
 ZAPI_TOKEN = os.getenv("ZAPI_TOKEN")
 
 login_manager = LoginManager()
@@ -33,8 +35,14 @@ def registrar_log(os_id, acao):
         print(f"Erro ao registrar log: {e}")
 
 def enviar_whatsapp(telefone, mensagem):
-    # Removido o Header de Autorização complexo, vamos usar a forma padrão da Z-API na URL
-    url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
+    # A URL correta da Z-API agora requer apenas a instância
+    url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/messages/send-text"
+    
+    # O Client-Token deve ir no cabeçalho (Header) de autorização
+    headers = {
+        "Client-Token": ZAPI_TOKEN,
+        "Content-Type": "application/json"
+    }
     
     payload = {
         "phone": telefone,
@@ -42,9 +50,9 @@ def enviar_whatsapp(telefone, mensagem):
     }
     
     try:
-        response = requests.post(url_zapi, json=payload)
-        print(f"DEBUG Z-API: URL {url_zapi}")
-        print(f"DEBUG Z-API: Status {response.status_code} | Resposta: {response.text}")
+        response = requests.post(url_zapi, json=payload, headers=headers)
+        print(f"DEBUG Z-API URL: {url_zapi}")
+        print(f"DEBUG Z-API Status: {response.status_code} | Resposta: {response.text}")
     except Exception as e:
         print(f"Erro ao comunicar com Z-API: {e}")
 
