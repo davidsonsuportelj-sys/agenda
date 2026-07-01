@@ -25,17 +25,17 @@
         .text-pendente { color: #d97706; } .text-concluido { color: #16a34a; } .text-cancelado { color: #dc2626; }
         .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
         .dropup { position: relative; display: inline-block; }
-        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; }
+        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 180px; padding: 10px; }
         .dropup:hover .dropup-content { display: block; }
-        .dropup-content a { padding: 10px; display: block; text-decoration: none; color: var(--text); }
+        .dropup-content a { padding: 5px; display: block; text-decoration: none; color: var(--text); }
         .dropup-content a:hover { background: #f8fafc; }
+        .dropup-content form { border-top: 1px solid #f1f5f9; margin-top: 10px; padding-top: 10px; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Agenda de Serviços</h1>
-        <div>
-            Bem-vindo, <strong>{{ current_user.id }}</strong> 
+        <div>Bem-vindo, <strong>{{ current_user.id }}</strong> 
             {% if role == 'admin' %}| <a href="{{ url_for('ver_logs') }}">Ver Logs</a>{% endif %}
             | <a href="{{ url_for('logout') }}">Sair</a>
         </div>
@@ -72,7 +72,13 @@
                     <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; color: #1e293b; padding: 5px 10px; cursor: pointer;">Ações ▼</button>
                         <div class="dropup-content">
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
-                            {% if role != 'tecnico' %}<a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>{% endif %}
+                            {% if role != 'tecnico' %}
+                            <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
+                            <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
+                                <input type="datetime-local" name="nova_data" required style="width: 100%; margin-bottom: 5px; font-size: 0.8rem;">
+                                <button type="submit" style="width: 100%; height: 30px; font-size: 0.75rem;">Reagendar</button>
+                            </form>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}

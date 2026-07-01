@@ -113,6 +113,15 @@ def mudar_status(id, novo_status):
     registrar_log(id, f"Alterou status para {novo_status}")
     return redirect(url_for('index'))
 
+@app.route('/reagendar/<id>', methods=['POST'])
+@login_required
+def reagendar(id):
+    nova_data = request.form.get('nova_data')
+    if nova_data:
+        supabase.table("agendamentos").update({"horario": nova_data}).eq("id", id).execute()
+        registrar_log(id, f"Reagendou a OS para {nova_data}")
+    return redirect(url_for('index'))
+
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
