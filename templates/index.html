@@ -8,18 +8,16 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         
-        /* Dropup Menu */
+        /* Menu Dropup */
         .dropup { position: relative; display: inline-block; }
         .dropup-content { 
             display: none; position: absolute; bottom: 100%; left: 0; 
-            background-color: #f9f9f9; min-width: 120px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-            z-index: 1; border: 1px solid #ddd;
+            background-color: #f9f9f9; min-width: 150px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 10; border: 1px solid #ddd;
         }
         .dropup:hover .dropup-content { display: block; }
-        .dropup-content a { color: black; padding: 8px; display: block; text-decoration: none; }
+        .dropup-content a { color: black; padding: 10px; display: block; text-decoration: none; }
         .dropup-content a:hover { background-color: #f1f1f1; }
-        
-        /* Botões */
         .btn-main { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; background-color: #007bff; color: white; }
     </style>
 </head>
@@ -27,8 +25,32 @@
 
     <h1>Bem-vindo, {{ current_user.id }} ({{ role }})</h1>
 
+    {% if role in ['admin', 'vendedor'] %}
+    <section style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <h3>Nova Ordem de Serviço</h3>
+        <form action="{{ url_for('agendar') }}" method="POST">
+            <input type="text" name="cliente" placeholder="Cliente" required>
+            <input type="text" name="servico" placeholder="Serviço" required>
+            <input type="text" name="horario" placeholder="Data/Hora" required>
+            <select name="tecnico">
+                {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
+            </select>
+            <button type="submit">Agendar</button>
+        </form>
+    </section>
+    {% endif %}
+
+    <div class="stats">
+        <a href="{{ url_for('index', status='Todos') }}">Todos</a> |
+        <a href="{{ url_for('index', status='Pendente') }}">Pendentes</a> |
+        <a href="{{ url_for('index', status='Concluído') }}">Concluídos</a> |
+        <a href="{{ url_for('index', status='Cancelado') }}">Cancelados</a>
+    </div>
+
     <table>
         <tr>
+            <th>Vendedor</th>
+            <th>Técnico</th>
             <th>Cliente</th>
             <th>Serviço</th>
             <th>Status</th>
@@ -36,6 +58,8 @@
         </tr>
         {% for item in agenda %}
         <tr>
+            <td>{{ item.vendedor }}</td>
+            <td>{{ item.tecnico }}</td>
             <td>{{ item.cliente }}</td>
             <td>{{ item.servico }}</td>
             <td>{{ item.status }}</td>
@@ -45,11 +69,11 @@
                         <button class="btn-main">Ações ▼</button>
                         <div class="dropup-content">
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" 
-                               onclick="return confirm('Deseja confirmar a finalização desta OS?')">Confirmar Finalizar</a>
+                               onclick="return confirm('Confirmar finalização?')">Finalizar</a>
                             
                             {% if role != 'tecnico' %}
                             <a href="{{ url_for('cancelar', id=item.id) }}" style="color: red;"
-                               onclick="return confirm('Tem certeza que deseja CANCELAR esta OS?')">Confirmar Cancelar</a>
+                               onclick="return confirm('Tem certeza que deseja CANCELAR?')">Cancelar</a>
                             {% endif %}
                         </div>
                     </div>
