@@ -7,37 +7,19 @@
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #ffffff; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        /* Formulário em linha com espaçamento */
         form { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
         .field-wrapper { flex: 1; min-width: 140px; }
-        
         label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; display: block; color: #475569; }
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; height: 42px; }
-
-        /* Tabela com bordas verticais (grid) */
         .table-responsive { overflow-x: auto; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; min-width: 900px; border: 1px solid #e2e8f0; }
         th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; border: 1px solid #e2e8f0; }
         td { padding: 15px; border: 1px solid #e2e8f0; }
-        
-        /* Cores de Linha */
-        .row-pendente { background-color: #fffbeb; }
-        .row-concluido { background-color: #f0fdf4; }
-        .row-cancelado { background-color: #fef2f2; }
-        
         .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
-        .text-pendente { color: #d97706; }
-        .text-concluido { color: #16a34a; }
-        .text-cancelado { color: #dc2626; }
-        
-        .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
-
-        /* Dropup */
+        .text-pendente { color: #d97706; } .text-concluido { color: #16a34a; } .text-cancelado { color: #dc2626; }
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; }
         .dropup:hover .dropup-content { display: block; }
@@ -49,7 +31,11 @@
 
     <div class="header">
         <h1>Agenda de Serviços</h1>
-        <div>Bem-vindo, <strong>{{ current_user.id }}</strong> | <a href="{{ url_for('logout') }}">Sair</a></div>
+        <div>
+            Bem-vindo, <strong>{{ current_user.id }}</strong> 
+            {% if role == 'admin' %}| <a href="{{ url_for('ver_logs') }}">Ver Logs</a>{% endif %}
+            | <a href="{{ url_for('logout') }}">Sair</a>
+        </div>
     </div>
 
     {% if role in ['admin', 'vendedor'] %}
@@ -74,15 +60,15 @@
         <table>
             <tr><th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
             {% for item in agenda %}
-            <tr class="{% if item.status == 'Pendente' %}row-pendente{% elif item.status == 'Concluído' %}row-concluido{% elif item.status == 'Cancelado' %}row-cancelado{% endif %}">
+            <tr>
                 <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td>
                 <td>{{ item.horario[8:10] }}/{{ item.horario[5:7] }}/{{ item.horario[0:4] }} {{ item.horario[11:16] }}</td>
                 <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td>
-                <td class="obs-cell" title="{{ item.obs }}">{{ item.obs }}</td>
+                <td>{{ item.obs }}</td>
                 <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">{{ item.status }}</span></td>
                 <td>
                     {% if item.status == 'Pendente' %}
-                    <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; color: var(--text); padding: 5px 10px; cursor: pointer;">Ações ▼</button>
+                    <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; padding: 5px 10px; cursor: pointer;">Ações ▼</button>
                         <div class="dropup-content">
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
                             {% if role != 'tecnico' %}<a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>{% endif %}
