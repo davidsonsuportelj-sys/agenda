@@ -79,13 +79,6 @@ def index():
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
     return render_template('index.html', agenda=agenda, role=current_user.role, user_id=current_user.id, tecnicos=tecnicos, vendedores=vendedores)
 
-@app.route('/logs')
-@login_required
-def ver_logs():
-    if current_user.role != 'admin': return "Acesso negado", 403
-    logs = supabase.table("logs_os").select("*").order("id", desc=True).execute().data
-    return render_template('logs.html', logs=logs)
-
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
@@ -108,6 +101,7 @@ def agendar():
 def reagendar(id):
     nova_data = request.form.get('nova_data')
     if nova_data:
+        # Atualiza a data e define o status como Reagendado
         supabase.table("agendamentos").update({"horario": nova_data, "status": "Reagendado"}).eq("id", id).execute()
         registrar_log(id, f"Reagendou a OS para {nova_data}")
     return redirect(url_for('index'))
@@ -117,7 +111,9 @@ def reagendar(id):
 def mudar_status(id, novo_status):
     if novo_status == 'Concluído':
         os_data = supabase.table("agendamentos").select("cliente, servico").eq("id", id).single().execute()
-        if os_data.data: notificar_conclusao(id, os_data.data['cliente'], os_data.data['servico'])
+        if os_data.data:
+            notificar_conclusao(id, os_data.data['cliente'], os_data.data['servico'])
+    
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
     registrar_log(id, f"Alterou status para {novo_status}")
     return redirect(url_for('index'))
@@ -125,16 +121,20 @@ def mudar_status(id, novo_status):
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
-    if current_user.role == 'tecnico': return "Acesso negado", 403
+    if current_user.role == 'tecnico':
+        return "Acesso negado: Técnicos não podem cancelar OS.", 403
+        
     os_data = supabase.table("agendamentos").select("tecnico, cliente, servico").eq("id", id).single().execute()
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
     registrar_log(id, "Cancelou a OS")
+    
     if os_data.data:
         tec_nome = os_data.data.get('tecnico')
         tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
         if tec_data.data and tec_data.data.get('telefone'):
             msg = f"🚫 *Aviso de Cancelamento*\n\nA OS do cliente *{os_data.data.get('cliente')}* ({os_data.data.get('servico')}) foi cancelada."
             enviar_whatsapp(tec_data.data['telefone'], msg)
+            
     return redirect(url_for('index'))
 
 @app.route('/logout')
