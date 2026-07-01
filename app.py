@@ -124,7 +124,7 @@ def cancelar(id):
         tec_nome = os_data.data.get('tecnico')
         tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
         if tec_data.data and tec_data.data.get('telefone'):
-            msg = f"🚫 *Aviso de Cancelamento*\n\nA OS do cliente *{os_data.data.get('cliente')}* foi cancelada."
+            msg = f"🚫 *Aviso de Cancelamento*\n\nA OS do cliente *{os_data.data.get('cliente')}* ({os_data.data.get('servico')}) foi cancelada."
             enviar_whatsapp(tec_data.data['telefone'], msg)
     return redirect(url_for('index'))
 
