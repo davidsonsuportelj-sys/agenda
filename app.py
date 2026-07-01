@@ -10,9 +10,8 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
-# ID da sua instância
+# Configurações Z-API
 ZAPI_INSTANCE_ID = os.getenv("ZAPI_INSTANCE_ID")
-# AQUI NO RENDER, COLOQUE O "Client-Token" (aquele código longo da sua instância)
 ZAPI_TOKEN = os.getenv("ZAPI_TOKEN")
 
 login_manager = LoginManager()
@@ -30,15 +29,18 @@ class User(UserMixin):
 
 def registrar_log(os_id, acao):
     try:
-        supabase.table("logs_os").insert({"usuario": current_user.id, "os_id": os_id, "acao": acao}).execute()
+        supabase.table("logs_os").insert({
+            "usuario": current_user.id,
+            "os_id": os_id,
+            "acao": acao
+        }).execute()
     except Exception as e:
         print(f"Erro ao registrar log: {e}")
 
 def enviar_whatsapp(telefone, mensagem):
-    # A URL correta da Z-API agora requer apenas a instância
-    url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/messages/send-text"
+    # Rota universal de envio
+    url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
     
-    # O Client-Token deve ir no cabeçalho (Header) de autorização
     headers = {
         "Client-Token": ZAPI_TOKEN,
         "Content-Type": "application/json"
@@ -59,7 +61,8 @@ def enviar_whatsapp(telefone, mensagem):
 @login_manager.user_loader
 def load_user(user_id):
     response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
-    if response.data: return User(response.data['username'], response.data['role'])
+    if response.data:
+        return User(response.data['username'], response.data['role'])
     return None
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -78,13 +81,25 @@ def login():
 def index():
     status_filtro = request.args.get('status', 'Todos')
     query = supabase.table("agendamentos").select("*")
-    if current_user.role == 'tecnico': query = query.eq("tecnico", current_user.id)
-    elif current_user.role == 'vendedor': query = query.eq("vendedor", current_user.id)
+    if current_user.role == 'tecnico':
+        query = query.eq("tecnico", current_user.id)
+    elif current_user.role == 'vendedor':
+        query = query.eq("vendedor", current_user.id)
+    
     agenda_full = query.execute().data
+    total_pendentes = len([item for item in agenda_full if item['status'] == 'Pendente'])
+    total_concluidos = len([item for item in agenda_full if item['status'] == 'Concluído'])
+    total_cancelados = len([item for item in agenda_full if item['status'] == 'Cancelado'])
+    
     agenda = [item for item in agenda_full if item['status'] == status_filtro] if status_filtro != 'Todos' else agenda_full
+    
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
-    return render_template('index.html', agenda=agenda, role=current_user.role, user_id=current_user.id, tecnicos=tecnicos, vendedores=vendedores)
+    
+    return render_template('index.html', agenda=agenda, role=current_user.role, 
+                           user_id=current_user.id, tecnicos=tecnicos, vendedores=vendedores,
+                           total_pendentes=total_pendentes, total_concluidos=total_concluidos,
+                           total_cancelados=total_cancelados)
 
 @app.route('/agendar', methods=['POST'])
 @login_required
@@ -92,15 +107,30 @@ def agendar():
     if current_user.role in ['admin', 'vendedor']:
         tec_nome = request.form.get('tecnico')
         res = supabase.table("agendamentos").insert({
-            "cliente": request.form.get('cliente'), "servico": request.form.get('servico'), "horario": request.form.get('horario'),
-            "tecnico": tec_nome, "vendedor": request.form.get('vendedor') if current_user.role == 'admin' else current_user.id,
-            "prioridade": request.form.get('prioridade'), "obs": request.form.get('obs'), "status": "Pendente"
+            "cliente": request.form.get('cliente'), 
+            "servico": request.form.get('servico'), 
+            "horario": request.form.get('horario'),
+            "tecnico": tec_nome,
+            "vendedor": request.form.get('vendedor') if current_user.role == 'admin' else current_user.id,
+            "prioridade": request.form.get('prioridade'),
+            "obs": request.form.get('obs'),
+            "status": "Pendente"
         }).execute()
+        
         registrar_log(res.data[0]['id'], "Criou nova OS")
+        
         tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
         if tec_data.data and tec_data.data.get('telefone'):
             msg = f"🔔 *Nova OS!*\nCliente: {request.form.get('cliente')}\nServiço: {request.form.get('servico')}"
             enviar_whatsapp(tec_data.data['telefone'], msg)
+            
+    return redirect(url_for('index'))
+
+@app.route('/mudar_status/<id>/<novo_status>')
+@login_required
+def mudar_status(id, novo_status):
+    supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
+    registrar_log(id, f"Alterou status para {novo_status}")
     return redirect(url_for('index'))
 
 @app.route('/cancelar/<id>')
@@ -109,12 +139,14 @@ def cancelar(id):
     os_data = supabase.table("agendamentos").select("tecnico, cliente, servico").eq("id", id).single().execute()
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
     registrar_log(id, "Cancelou a OS")
+    
     if os_data.data:
         tec_nome = os_data.data.get('tecnico')
         tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
         if tec_data.data and tec_data.data.get('telefone'):
             msg = f"🚫 *Aviso de Cancelamento*\n\nA OS do cliente *{os_data.data.get('cliente')}* ({os_data.data.get('servico')}) foi cancelada."
             enviar_whatsapp(tec_data.data['telefone'], msg)
+            
     return redirect(url_for('index'))
 
 @app.route('/logout')
