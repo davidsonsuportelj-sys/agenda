@@ -10,9 +10,11 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
+# Configurações ZAPI
 ZAPI_INSTANCE_ID = os.getenv("ZAPI_INSTANCE_ID")
 ZAPI_TOKEN = os.getenv("ZAPI_TOKEN")
 
+# Configuração Supabase
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
@@ -28,14 +30,19 @@ class User(UserMixin):
 
 def registrar_log(os_id, acao):
     try:
-        supabase.table("logs_os").insert({"usuario": current_user.id, "os_id": os_id, "acao": acao}).execute()
+        supabase.table("logs_os").insert({
+            "usuario": current_user.id, 
+            "os_id": os_id, 
+            "acao": acao
+        }).execute()
     except Exception as e:
         print(f"Erro ao registrar log: {e}")
 
 @login_manager.user_loader
 def load_user(user_id):
     response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
-    if response.data: return User(response.data['username'], response.data['role'])
+    if response.data: 
+        return User(response.data['username'], response.data['role'])
     return None
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -52,7 +59,7 @@ def login():
 @app.route('/')
 @login_required
 def index():
-    # Consulta completa trazendo o nome da tabela vinculada 'clientes'
+    # Consulta completa trazendo todos os dados e a relação com a tabela clientes
     query = supabase.table("agendamentos").select("*, clientes(nome)")
     
     if current_user.role == 'tecnico': 
@@ -65,7 +72,12 @@ def index():
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
     
-    return render_template('index.html', agenda=agenda, clientes=clientes, tecnicos=tecnicos, vendedores=vendedores, role=current_user.role)
+    return render_template('index.html', 
+                           agenda=agenda, 
+                           clientes=clientes, 
+                           tecnicos=tecnicos, 
+                           vendedores=vendedores, 
+                           role=current_user.role)
 
 @app.route('/cadastrar_cliente', methods=['POST'])
 @login_required

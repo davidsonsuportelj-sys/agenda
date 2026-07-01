@@ -6,20 +6,18 @@
     <title>Agenda de Serviços</title>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         form { display: flex; flex-direction: column; gap: 10px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        label { font-size: 0.85rem; font-weight: bold; color: #475569; }
-        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; box-sizing: border-box; }
+        label { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; }
         button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .table-responsive { overflow-x: auto; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .table-container { background: var(--white); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
         th, td { padding: 15px; border: 1px solid #e2e8f0; text-align: left; }
-        .status-pendente { color: #d97706; font-weight: bold; }
-        .status-reagendado { color: #2563eb; font-weight: bold; }
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 1px solid #cbd5e1; padding: 15px; z-index: 999; min-width: 220px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); border-radius: 8px; }
         .dropup:hover .dropup-content { display: block; }
@@ -28,7 +26,7 @@
 <body>
     <div class="header">
         <h1>Agenda de Serviços</h1>
-        <a href="{{ url_for('logout') }}">Sair do Sistema</a>
+        <a href="{{ url_for('logout') }}">Sair</a>
     </div>
     
     <div class="grid">
@@ -36,8 +34,8 @@
             <h3>Cadastrar Novo Cliente</h3>
             <form action="{{ url_for('cadastrar_cliente') }}" method="POST">
                 <input type="text" name="nome" placeholder="Nome Completo" required>
-                <input type="tel" name="telefone" placeholder="Telefone (WhatsApp)">
-                <input type="text" name="endereco" placeholder="Endereço Completo">
+                <input type="tel" name="telefone" placeholder="Telefone">
+                <input type="text" name="endereco" placeholder="Endereço">
                 <button type="submit">Salvar Cliente</button>
             </form>
         </div>
@@ -60,8 +58,7 @@
                     </div>
                 </div>
                 <label>Serviço</label>
-                <input type="text" name="servico" placeholder="Descrição do serviço" required>
-                
+                <input type="text" name="servico" required>
                 <div class="form-row">
                     <div>
                         <label>Data e Hora</label>
@@ -69,39 +66,37 @@
                     </div>
                     <div>
                         <label>Prioridade</label>
-                        <select name="prioridade">
-                            <option>Baixa</option><option>Média</option><option>Alta</option>
-                        </select>
+                        <select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select>
                     </div>
                 </div>
-                <label>Observação</label>
-                <input type="text" name="obs" placeholder="Detalhes extras...">
-                <button type="submit">Confirmar Agendamento</button>
+                <label>Observações</label>
+                <input type="text" name="obs">
+                <button type="submit">Agendar</button>
             </form>
         </div>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-container">
         <table>
-            <tr><th>Cliente</th><th>Serviço</th><th>Data/Hora</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
+            <tr><th>Cliente</th><th>Serviço</th><th>Data/Hora</th><th>Status</th><th>Prioridade</th><th>Observações</th><th>Ações</th></tr>
             {% for item in agenda %}
             <tr>
                 <td>{{ item.clientes.nome if item.clientes else 'N/A' }}</td>
                 <td>{{ item.servico }}</td>
                 <td>{{ item.horario }}</td>
+                <td>{{ item.status }}</td>
                 <td>{{ item.prioridade }}</td>
                 <td>{{ item.obs }}</td>
-                <td class="{% if item.status == 'Pendente' %}status-pendente{% elif item.status == 'Reagendado' %}status-reagendado{% endif %}">{{ item.status }}</td>
                 <td>
                     {% if item.status not in ['Concluído', 'Cancelado'] %}
                     <div class="dropup">
                         <button>Ações ▼</button>
                         <div class="dropup-content">
-                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" style="display:block; padding:5px 0;">Finalizar Serviço</a>
-                            <a href="{{ url_for('cancelar', id=item.id) }}" style="display:block; padding:5px 0;">Cancelar</a>
+                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
+                            <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
                             <form action="{{ url_for('reagendar', id=item.id) }}" method="POST" style="margin-top:10px;">
                                 <input type="datetime-local" name="nova_data" required style="width:100%; margin-bottom:5px;">
-                                <button type="submit" style="width:100%;">Reagendar</button>
+                                <button type="submit">Reagendar</button>
                             </form>
                         </div>
                     </div>
