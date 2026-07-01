@@ -26,15 +26,16 @@
         .row-concluido { background-color: #f0fdf4; }
         .row-cancelado { background-color: #fef2f2; }
         
-        /* Status Badge e Tooltip Observação */
+        /* Status Badge */
         .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
         .text-pendente { color: #d97706; }
         .text-concluido { color: #16a34a; }
         .text-cancelado { color: #dc2626; }
         
-        .obs-cell { position: relative; cursor: help; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .obs-cell:hover::after { content: attr(data-fulltext); position: absolute; left: 0; top: 100%; z-index: 20; background: #333; color: #fff; padding: 10px; border-radius: 6px; width: 250px; white-space: normal; box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-size: 0.85rem; }
+        /* Popup de Observação */
+        .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 
+        /* Dropup */
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; }
         .dropup:hover .dropup-content { display: block; }
@@ -75,7 +76,7 @@
                 <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td>
                 <td>{{ item.horario[8:10] }}/{{ item.horario[5:7] }}/{{ item.horario[0:4] }} {{ item.horario[11:16] }}</td>
                 <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td>
-                <td class="obs-cell" data-fulltext="{{ item.obs }}">{{ item.obs }}</td>
+                <td class="obs-cell" title="{{ item.obs }}">{{ item.obs }}</td>
                 <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">{{ item.status }}</span></td>
                 <td>
                     {% if item.status == 'Pendente' %}
