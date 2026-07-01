@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from supabase import create_client
 from dotenv import load_dotenv
@@ -32,16 +32,39 @@ def registrar_log(os_id, acao):
     except Exception as e:
         print(f"Erro ao registrar log: {e}")
 
+def enviar_whatsapp(telefone, mensagem):
+    url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
+    headers = {"Client-Token": ZAPI_TOKEN, "Content-Type": "application/json"}
+    payload = {"phone": telefone, "message": mensagem}
+    try:
+        response = requests.post(url_zapi, json=payload, headers=headers)
+        print(f"DEBUG Z-API Status: {response.status_code} | Resposta: {response.text}")
+    except Exception as e:
+        print(f"Erro ao comunicar com Z-API: {e}")
+
+# Notifica Admin e Vendedores ao finalizar
+def notificar_conclusao(os_id, cliente, servico):
+    # Busca telefones de Admins e Vendedores
+    usuarios_alvo = supabase.table("usuarios").select("telefone").in_("role", ["admin", "vendedor"]).execute().data
+    msg = f"✅ *OS Finalizada!*\nID: {os_id}\nCliente: {cliente}\nServiço: {servico}"
+    
+    for user in usuarios_alvo:
+        if user.get('telefone'):
+            enviar_whatsapp(user['telefone'], msg)
+
 @login_manager.user_loader
 def load_user(user_id):
     response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
-    return User(response.data['username'], response.data['role']) if response.data else None
+    if response.data: return User(response.data['username'], response.data['role'])
+    return None
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        response = supabase.table("usuarios").select("*").eq("username", request.form.get('username')).single().execute()
-        if response.data and response.data['password'] == request.form.get('password'):
+        user_in = request.form.get('username')
+        pass_in = request.form.get('password')
+        response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
+        if response.data and response.data['password'] == pass_in:
             login_user(User(response.data['username'], response.data['role']))
             return redirect(url_for('index'))
     return render_template('login.html')
@@ -49,9 +72,12 @@ def login():
 @app.route('/')
 @login_required
 def index():
+    status_filtro = request.args.get('status', 'Todos')
     query = supabase.table("agendamentos").select("*")
     if current_user.role == 'tecnico': query = query.eq("tecnico", current_user.id)
-    agenda = query.execute().data
+    elif current_user.role == 'vendedor': query = query.eq("vendedor", current_user.id)
+    agenda_full = query.execute().data
+    agenda = [item for item in agenda_full if item['status'] == status_filtro] if status_filtro != 'Todos' else agenda_full
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
     return render_template('index.html', agenda=agenda, role=current_user.role, user_id=current_user.id, tecnicos=tecnicos, vendedores=vendedores)
@@ -59,25 +85,28 @@ def index():
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    res = supabase.table("agendamentos").insert({
-        "cliente": request.form.get('cliente'), "servico": request.form.get('servico'), "horario": request.form.get('horario'),
-        "tecnico": request.form.get('tecnico'), "vendedor": request.form.get('vendedor') if current_user.role == 'admin' else current_user.id,
-        "prioridade": request.form.get('prioridade'), "obs": request.form.get('obs'), "status": "Pendente"
-    }).execute()
-    registrar_log(res.data[0]['id'], "Criou nova OS")
-    return redirect(url_for('index'))
-
-@app.route('/reagendar/<id>', methods=['POST'])
-@login_required
-def reagendar(id):
-    if current_user.role != 'admin': return "Acesso negado", 403
-    supabase.table("agendamentos").update({"horario": request.form.get('nova_data')}).eq("id", id).execute()
-    registrar_log(id, "Reagendou a OS")
+    if current_user.role in ['admin', 'vendedor']:
+        tec_nome = request.form.get('tecnico')
+        res = supabase.table("agendamentos").insert({
+            "cliente": request.form.get('cliente'), "servico": request.form.get('servico'), "horario": request.form.get('horario'),
+            "tecnico": tec_nome, "vendedor": request.form.get('vendedor') if current_user.role == 'admin' else current_user.id,
+            "prioridade": request.form.get('prioridade'), "obs": request.form.get('obs'), "status": "Pendente"
+        }).execute()
+        registrar_log(res.data[0]['id'], "Criou nova OS")
+        tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
+        if tec_data.data and tec_data.data.get('telefone'):
+            msg = f"🔔 *Nova OS!*\nCliente: {request.form.get('cliente')}\nServiço: {request.form.get('servico')}"
+            enviar_whatsapp(tec_data.data['telefone'], msg)
     return redirect(url_for('index'))
 
 @app.route('/mudar_status/<id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
+    if novo_status == 'Concluído':
+        os_data = supabase.table("agendamentos").select("cliente, servico").eq("id", id).single().execute()
+        if os_data.data:
+            notificar_conclusao(id, os_data.data['cliente'], os_data.data['servico'])
+    
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
     registrar_log(id, f"Alterou status para {novo_status}")
     return redirect(url_for('index'))
@@ -85,9 +114,21 @@ def mudar_status(id, novo_status):
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
-    if current_user.role == 'tecnico': return "Acesso negado", 403
+    # Bloqueio de acesso para técnicos
+    if current_user.role == 'tecnico':
+        return "Acesso negado: Técnicos não podem cancelar OS.", 403
+        
+    os_data = supabase.table("agendamentos").select("tecnico, cliente, servico").eq("id", id).single().execute()
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
     registrar_log(id, "Cancelou a OS")
+    
+    if os_data.data:
+        tec_nome = os_data.data.get('tecnico')
+        tec_data = supabase.table("usuarios").select("telefone").eq("username", tec_nome).single().execute()
+        if tec_data.data and tec_data.data.get('telefone'):
+            msg = f"🚫 *Aviso de Cancelamento*\n\nA OS do cliente *{os_data.data.get('cliente')}* ({os_data.data.get('servico')}) foi cancelada."
+            enviar_whatsapp(tec_data.data['telefone'], msg)
+            
     return redirect(url_for('index'))
 
 @app.route('/logout')
@@ -97,4 +138,4 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
