@@ -9,35 +9,32 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .card { background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
-        /* Ajuste de formulário com espaçamento moderno */
-        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; align-items: end; }
-        label { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; display: block; color: #475569; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
-        button { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; height: 44px; transition: 0.3s; }
-        button:hover { opacity: 0.9; }
+        /* Formulário em linha reta com espaçamento ajustável */
+        form { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+        .field-wrapper { flex: 1; min-width: 140px; }
+        
+        label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; display: block; color: #475569; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; height: 42px; }
 
         .table-responsive { overflow-x: auto; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; }
         td { padding: 15px; border-bottom: 1px solid #f1f5f9; }
         
-        /* Cores de Linha */
         .row-pendente { background-color: #fffbeb; }
         .row-concluido { background-color: #f0fdf4; }
         .row-cancelado { background-color: #fef2f2; }
         
-        /* Status Badge */
         .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
         .text-pendente { color: #d97706; }
         .text-concluido { color: #16a34a; }
         .text-cancelado { color: #dc2626; }
         
-        /* Célula com popup (title) */
         .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
 
-        /* Dropup */
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; }
         .dropup:hover .dropup-content { display: block; }
@@ -56,14 +53,14 @@
     <div class="card">
         <h3>Nova Ordem de Serviço</h3>
         <form action="{{ url_for('agendar') }}" method="POST">
-            <div><label>Cliente</label><input type="text" name="cliente" required></div>
-            <div><label>Serviço</label><input type="text" name="servico" required></div>
-            <div><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
-            <div><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
-            <div><label>Observação</label><input type="text" name="obs"></div>
-            <div><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
+            <div class="field-wrapper"><label>Cliente</label><input type="text" name="cliente" required></div>
+            <div class="field-wrapper"><label>Serviço</label><input type="text" name="servico" required></div>
+            <div class="field-wrapper"><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
+            <div class="field-wrapper"><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
+            <div class="field-wrapper"><label>Observação</label><input type="text" name="obs"></div>
+            <div class="field-wrapper"><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
             {% if role == 'admin' %}
-            <div><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
+            <div class="field-wrapper"><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
             {% endif %}
             <button type="submit">Agendar</button>
         </form>
