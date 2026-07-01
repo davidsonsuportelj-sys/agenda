@@ -12,6 +12,11 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         
+        /* Cores de Status */
+        .status-pendente { color: orange; font-weight: bold; }
+        .status-concluido { color: green; font-weight: bold; }
+        .status-cancelado { color: red; font-weight: bold; }
+
         /* Dropup Menu */
         .dropup { position: relative; display: inline-block; }
         .dropup-content { display: none; position: absolute; bottom: 100%; left: 0; background-color: #f9f9f9; min-width: 120px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 10; border: 1px solid #ddd; }
@@ -50,7 +55,12 @@
         {% for item in agenda %}
         <tr>
             <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td><td>{{ item.horario }}</td>
-            <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td><td>{{ item.obs }}</td><td>{{ item.status }}</td>
+            <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td><td>{{ item.obs }}</td>
+            <td>
+                <span class="{% if item.status == 'Pendente' %}status-pendente{% elif item.status == 'Concluído' %}status-concluido{% elif item.status == 'Cancelado' %}status-cancelado{% endif %}">
+                    {{ item.status }}
+                </span>
+            </td>
             <td>
                 {% if item.status == 'Pendente' %}
                 <div class="dropup">
