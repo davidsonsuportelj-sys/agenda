@@ -12,7 +12,7 @@
         .field-wrapper { flex: 1; min-width: 140px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; height: 42px; }
-        table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; background: white; }
         th, td { padding: 15px; border: 1px solid #e2e8f0; text-align: left; }
         .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
         .dropup { position: relative; display: inline-block; }
@@ -49,8 +49,8 @@
                         <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
                         {% if role == 'admin' %}
                         <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
-                            <input type="datetime-local" name="nova_data" required>
-                            <button type="submit">Reagendar</button>
+                            <input type="datetime-local" name="nova_data" required style="width:100%; margin-bottom:5px;">
+                            <button type="submit" style="width:100%;">Reagendar</button>
                         </form>
                         {% endif %}
                         <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>

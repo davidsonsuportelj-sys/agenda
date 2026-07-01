@@ -27,11 +27,10 @@ class User(UserMixin):
         self.role = role
 
 def registrar_log(os_id, acao):
-    supabase.table("logs_os").insert({"usuario": current_user.id, "os_id": os_id, "acao": acao}).execute()
-
-def enviar_whatsapp(telefone, mensagem):
-    url_zapi = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-messages"
-    requests.post(url_zapi, json={"phone": telefone, "message": mensagem}, headers={"Client-Token": ZAPI_TOKEN, "Content-Type": "application/json"})
+    try:
+        supabase.table("logs_os").insert({"usuario": current_user.id, "os_id": os_id, "acao": acao}).execute()
+    except Exception as e:
+        print(f"Erro ao registrar log: {e}")
 
 @login_manager.user_loader
 def load_user(user_id):
