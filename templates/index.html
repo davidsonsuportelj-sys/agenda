@@ -32,7 +32,6 @@
     </style>
 </head>
 <body>
-
     <div class="header">
         <h1>Agenda de Serviços</h1>
         <div>
@@ -41,7 +40,6 @@
             | <a href="{{ url_for('logout') }}">Sair</a>
         </div>
     </div>
-
     {% if role in ['admin', 'vendedor'] %}
     <div class="card">
         <h3>Nova Ordem de Serviço</h3>
@@ -59,7 +57,6 @@
         </form>
     </div>
     {% endif %}
-
     <div class="table-responsive">
         <table>
             <tr><th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
@@ -72,7 +69,7 @@
                 <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">{{ item.status }}</span></td>
                 <td>
                     {% if item.status == 'Pendente' %}
-                    <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; padding: 5px 10px; cursor: pointer;">Ações ▼</button>
+                    <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; color: #1e293b; padding: 5px 10px; cursor: pointer;">Ações ▼</button>
                         <div class="dropup-content">
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
                             {% if role != 'tecnico' %}<a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>{% endif %}
