@@ -5,90 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda de Serviços</title>
     <style>
-        body { font-family: sans-serif; padding: 10px; font-size: 14px; }
-        .form-container { background: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
-        .form-group { display: inline-block; margin: 5px; vertical-align: top; width: 45%; }
-        input, select { padding: 8px; width: 100%; box-sizing: border-box; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
         
-        /* Responsividade Tabela */
-        .table-responsive { overflow-x: auto; width: 100%; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 900px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
-        /* Espaçamento extra para Data/Hora */
-        th:nth-child(3), td:nth-child(3) { min-width: 140px; padding-left: 15px; padding-right: 15px; }
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; display: block; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
+        input:focus { border-color: var(--primary); }
         
-        /* Cores de Linha e Texto por Status */
-        .row-pendente { background-color: #fff9e6; } 
-        .row-concluido { background-color: #e6fffa; } 
-        .row-cancelado { background-color: #ffe6e6; } 
-        
-        .text-pendente { color: orange; font-weight: bold; }
-        .text-concluido { color: green; font-weight: bold; }
-        .text-cancelado { color: red; font-weight: bold; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { opacity: 0.9; }
 
-        /* Dropup Menu */
+        .table-responsive { overflow-x: auto; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; }
+        
+        .row-pendente { background-color: #fffbeb; }
+        .row-concluido { background-color: #f0fdf4; }
+        .row-cancelado { background-color: #fef2f2; }
+        
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
+        .text-pendente { color: #d97706; }
+        .text-concluido { color: #16a34a; }
+        .text-cancelado { color: #dc2626; }
+
         .dropup { position: relative; display: inline-block; }
-        .dropup-content { display: none; position: absolute; bottom: 100%; left: 0; background-color: #f9f9f9; min-width: 100px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2); z-index: 10; border: 1px solid #ddd; }
+        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; }
         .dropup:hover .dropup-content { display: block; }
-        .dropup-content a { color: black; padding: 10px; display: block; text-decoration: none; }
-        .dropup-content a:hover { background-color: #f1f1f1; }
-        .btn-main { padding: 5px 10px; cursor: pointer; }
+        .dropup-content a { padding: 10px; display: block; text-decoration: none; color: var(--text); }
+        .dropup-content a:hover { background: #f8fafc; }
     </style>
 </head>
 <body>
 
-    <h1>Bem-vindo, {{ current_user.id }} ({{ role }})</h1>
-    <a href="{{ url_for('logout') }}">Sair do Sistema</a>
+    <div class="header">
+        <h1>Agenda de Serviços</h1>
+        <div>Bem-vindo, <strong>{{ current_user.id }}</strong> | <a href="{{ url_for('logout') }}">Sair</a></div>
+    </div>
 
     {% if role in ['admin', 'vendedor'] %}
-    <div class="form-container">
+    <div class="card">
         <h3>Nova Ordem de Serviço</h3>
         <form action="{{ url_for('agendar') }}" method="POST">
-            <div class="form-group"><label>Cliente</label><input type="text" name="cliente" required></div>
-            <div class="form-group"><label>Serviço</label><input type="text" name="servico" required></div>
-            <div class="form-group"><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
-            <div class="form-group"><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
-            <div class="form-group"><label>Observação</label><input type="text" name="obs"></div>
-            <div class="form-group"><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
+            <div><label>Cliente</label><input type="text" name="cliente" required></div>
+            <div><label>Serviço</label><input type="text" name="servico" required></div>
+            <div><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
+            <div><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
+            <div><label>Observação</label><input type="text" name="obs"></div>
+            <div><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
             {% if role == 'admin' %}
-            <div class="form-group"><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
+            <div><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
             {% endif %}
-            <button type="submit" style="margin-top: 10px; width: 100%; padding: 10px;">Agendar</button>
+            <button type="submit" style="align-self: flex-end;">Agendar</button>
         </form>
     </div>
     {% endif %}
 
     <div class="table-responsive">
         <table>
-            <tr>
-                <th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th>
-            </tr>
+            <tr><th>Vendedor</th><th>Técnico</th><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Prioridade</th><th>Observação</th><th>Status</th><th>Ações</th></tr>
             {% for item in agenda %}
             <tr class="{% if item.status == 'Pendente' %}row-pendente{% elif item.status == 'Concluído' %}row-concluido{% elif item.status == 'Cancelado' %}row-cancelado{% endif %}">
-                <td>{{ item.vendedor }}</td>
-                <td>{{ item.tecnico }}</td>
-                <td>
-                    {% if item.horario %}
-                        {{ item.horario[8:10] }}/{{ item.horario[5:7] }}/{{ item.horario[0:4] }} {{ item.horario[11:16] }}
-                    {% endif %}
-                </td>
-                <td>{{ item.cliente }}</td>
-                <td>{{ item.servico }}</td>
-                <td>{{ item.prioridade }}</td>
-                <td>{{ item.obs }}</td>
-                <td class="{% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">
-                    {{ item.status }}
-                </td>
+                <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td>
+                <td>{{ item.horario[8:10] }}/{{ item.horario[5:7] }}/{{ item.horario[0:4] }} {{ item.horario[11:16] }}</td>
+                <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td><td>{{ item.obs }}</td>
+                <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% endif %}">{{ item.status }}</span></td>
                 <td>
                     {% if item.status == 'Pendente' %}
-                    <div class="dropup">
-                        <button class="btn-main">Ações ▼</button>
+                    <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; color: var(--text); padding: 5px 10px;">Ações ▼</button>
                         <div class="dropup-content">
-                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}" onclick="return confirm('Finalizar?')">Finalizar</a>
-                            {% if role != 'tecnico' %}
-                            <a href="{{ url_for('cancelar', id=item.id) }}" style="color: red;" onclick="return confirm('Cancelar?')">Cancelar</a>
-                            {% endif %}
+                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
+                            {% if role != 'tecnico' %}<a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>{% endif %}
                         </div>
                     </div>
                     {% endif %}
@@ -97,6 +88,5 @@
             {% endfor %}
         </table>
     </div>
-
 </body>
 </html>
