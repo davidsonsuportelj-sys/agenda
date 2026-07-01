@@ -10,13 +10,12 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
-# Configurações ZAPI
+# Configurações de API
 ZAPI_INSTANCE_ID = os.getenv("ZAPI_INSTANCE_ID")
 ZAPI_TOKEN = os.getenv("ZAPI_TOKEN")
-
-# Configuração Supabase
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
+
 supabase = create_client(url, key)
 
 login_manager = LoginManager()
@@ -29,6 +28,7 @@ class User(UserMixin):
         self.role = role
 
 def registrar_log(os_id, acao):
+    """Registra histórico de alterações no Supabase."""
     try:
         supabase.table("logs_os").insert({
             "usuario": current_user.id, 
@@ -59,7 +59,7 @@ def login():
 @app.route('/')
 @login_required
 def index():
-    # Consulta completa trazendo todos os dados e a relação com a tabela clientes
+    # Consulta completa para a tabela de agendamentos
     query = supabase.table("agendamentos").select("*, clientes(nome)")
     
     if current_user.role == 'tecnico': 
@@ -67,17 +67,16 @@ def index():
     elif current_user.role == 'vendedor': 
         query = query.eq("vendedor", current_user.id)
         
-    agenda = query.execute().data
+    agenda = query.order("id", desc=True).execute().data
     clientes = supabase.table("clientes").select("*").execute().data
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
-    vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
     
     return render_template('index.html', 
                            agenda=agenda, 
                            clientes=clientes, 
                            tecnicos=tecnicos, 
-                           vendedores=vendedores, 
-                           role=current_user.role)
+                           role=current_user.role, 
+                           user=current_user)
 
 @app.route('/cadastrar_cliente', methods=['POST'])
 @login_required
@@ -99,9 +98,9 @@ def agendar():
             "servico": request.form.get('servico'),
             "horario": request.form.get('horario'),
             "tecnico": request.form.get('tecnico'),
-            "vendedor": request.form.get('vendedor') if current_user.role == 'admin' else current_user.id,
             "prioridade": request.form.get('prioridade'),
             "obs": request.form.get('obs'),
+            "vendedor": current_user.id,
             "status": "Pendente"
         }).execute()
         if res.data:
@@ -121,14 +120,14 @@ def reagendar(id):
 @login_required
 def mudar_status(id, novo_status):
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
-    registrar_log(id, f"Alterou status para {novo_status}")
+    registrar_log(id, f"Mudou status para {novo_status}")
     return redirect(url_for('index'))
 
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
-    registrar_log(id, "Cancelou a OS")
+    registrar_log(id, "Cancelou OS")
     return redirect(url_for('index'))
 
 @app.route('/logout')
