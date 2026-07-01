@@ -101,7 +101,6 @@ def agendar():
 def reagendar(id):
     nova_data = request.form.get('nova_data')
     if nova_data:
-        # Atualiza a data e define o status como Reagendado
         supabase.table("agendamentos").update({"horario": nova_data, "status": "Reagendado"}).eq("id", id).execute()
         registrar_log(id, f"Reagendou a OS para {nova_data}")
     return redirect(url_for('index'))

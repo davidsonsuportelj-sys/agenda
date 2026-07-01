@@ -26,18 +26,20 @@
         .row-pendente { background-color: #fffbeb; }
         .row-concluido { background-color: #f0fdf4; }
         .row-cancelado { background-color: #fef2f2; }
-        .row-reagendado { background-color: #dbeafe; } /* Azul para reagendados */
+        /* Reagendado azul com bordas forçadas */
+        .row-reagendado { background-color: #dbeafe !important; }
+        .row-reagendado td { border: 1px solid #e2e8f0 !important; }
         
         .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
         .text-pendente { color: #d97706; } 
         .text-concluido { color: #16a34a; } 
         .text-cancelado { color: #dc2626; }
-        .text-reagendado { color: #1e40af; } /* Azul escuro */
+        .text-reagendado { color: #1e40af; font-weight: bold; }
         
         .obs-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
 
         .dropup { position: relative; display: inline-block; }
-        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 10; min-width: 200px; padding: 10px; }
+        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); z-index: 100; min-width: 180px; padding: 10px; }
         .dropup:hover .dropup-content { display: block; }
         .dropup-content a { padding: 8px; display: block; text-decoration: none; color: var(--text); }
         .dropup-content a:hover { background: #f8fafc; }
@@ -80,6 +82,7 @@
                 <td class="obs-cell" title="{{ item.obs }}">{{ item.obs }}</td>
                 <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% elif item.status == 'Reagendado' %}text-reagendado{% endif %}">{{ item.status }}</span></td>
                 <td>
+                    {% if item.status != 'Concluído' and item.status != 'Cancelado' %}
                     <div class="dropup"><button style="background: none; border: 1px solid #cbd5e1; color: var(--text); padding: 5px 10px; cursor: pointer;">Ações ▼</button>
                         <div class="dropup-content">
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
@@ -92,6 +95,7 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
