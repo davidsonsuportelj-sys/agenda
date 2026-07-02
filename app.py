@@ -10,12 +10,8 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
 
-# Configurações de API
-ZAPI_INSTANCE_ID = os.getenv("ZAPI_INSTANCE_ID")
-ZAPI_TOKEN = os.getenv("ZAPI_TOKEN")
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
-
 supabase = create_client(url, key)
 
 login_manager = LoginManager()
@@ -28,7 +24,6 @@ class User(UserMixin):
         self.role = role
 
 def registrar_log(os_id, acao):
-    """Registra histórico de alterações no Supabase."""
     try:
         supabase.table("logs_os").insert({
             "usuario": current_user.id, 
@@ -59,7 +54,6 @@ def login():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    # Removido o join 'clientes(nome)' pois tratamos a coluna 'cliente' como texto agora
     query = supabase.table("agendamentos").select("*")
  
     if current_user.role == 'tecnico': 
@@ -70,8 +64,6 @@ def index():
     agenda = query.order("id", desc=True).execute().data
     clientes = supabase.table("clientes").select("*").execute().data
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
-    
-    # Busca vendedores para o seletor
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
     
     return render_template('index.html', 
@@ -99,8 +91,6 @@ def agendar():
     if current_user.role in ['admin', 'vendedor']:
         vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
         
-        # O formulário envia o nome do cliente através do campo 'cliente_nome' ou similar. 
-        # Ajuste o 'cliente' para receber o texto.
         res = supabase.table("agendamentos").insert({
             "cliente": request.form.get('cliente_nome'), 
             "servico": request.form.get('servico'),
