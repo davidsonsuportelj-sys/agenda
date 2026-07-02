@@ -59,9 +59,8 @@ def login():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    # Consulta completa para a tabela de agendamentos
     query = supabase.table("agendamentos").select("*, clientes(nome)")
-    
+ 
     if current_user.role == 'tecnico': 
         query = query.eq("tecnico", current_user.id)
     elif current_user.role == 'vendedor': 
@@ -71,14 +70,14 @@ def index():
     clientes = supabase.table("clientes").select("*").execute().data
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     
-    # --- CORREÇÃO ADICIONADA AQUI ---
+    # Busca vendedores para o seletor
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
     
     return render_template('index.html', 
                            agenda=agenda, 
                            clientes=clientes, 
-                           tecnicos=tecnicos,
-                           vendedores=vendedores, # Passando a lista para o HTML
+                           tecnicos=tecnicos, 
+                           vendedores=vendedores,
                            role=current_user.role, 
                            user=current_user)
 
@@ -97,6 +96,10 @@ def cadastrar_cliente():
 @login_required
 def agendar():
     if current_user.role in ['admin', 'vendedor']:
+        # IMPORTANTE: Se o seu banco espera o ID do cliente, use request.form.get('cliente_id')
+        # Se você alterou o banco para aceitar o nome, mantenha assim.
+        vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
+        
         res = supabase.table("agendamentos").insert({
             "cliente_id": request.form.get('cliente_id'),
             "servico": request.form.get('servico'),
@@ -104,9 +107,10 @@ def agendar():
             "tecnico": request.form.get('tecnico'),
             "prioridade": request.form.get('prioridade'),
             "obs": request.form.get('obs'),
-            "vendedor": request.form.get('vendedor') or current_user.id, # Pega o selecionado ou o logado
+            "vendedor": vendedor_selecionado,
             "status": "Pendente"
         }).execute()
+        
         if res.data:
             registrar_log(res.data[0]['id'], "Criou nova OS")
     return redirect(url_for('index'))
