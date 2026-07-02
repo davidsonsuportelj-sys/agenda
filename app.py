@@ -96,12 +96,11 @@ def cadastrar_cliente():
 @login_required
 def agendar():
     if current_user.role in ['admin', 'vendedor']:
-        # IMPORTANTE: Se o seu banco espera o ID do cliente, use request.form.get('cliente_id')
-        # Se você alterou o banco para aceitar o nome, mantenha assim.
         vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
         
+        # CORREÇÃO: Mapeado 'cliente_id' para a coluna 'cliente' que o banco exige
         res = supabase.table("agendamentos").insert({
-            "cliente_id": request.form.get('cliente_id'),
+            "cliente": request.form.get('cliente_id'), 
             "servico": request.form.get('servico'),
             "horario": request.form.get('horario'),
             "tecnico": request.form.get('tecnico'),
