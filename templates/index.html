@@ -4,34 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda de Serviços</title>
-    <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        /* Corrigindo o layout do form */
-        form { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
-        .field-wrapper { flex: 1; min-width: 180px; }
-        
-        label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; display: block; color: #475569; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; height: 42px; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; height: 42px; }
-
-        /* Tabela e Menu de Ações (Corrigindo o bug de sobreposição) */
-        .table-responsive { overflow-x: visible; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; }
-        table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; }
-        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; border: 1px solid #e2e8f0; }
-        td { padding: 15px; border: 1px solid #e2e8f0; position: relative; }
-        
-        /* Dropup corrigido com z-index alto para não ficar escondido */
-        .dropup { position: relative; display: inline-block; }
-        .dropup-content { display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 9999; min-width: 180px; padding: 10px; }
-        .dropup:hover .dropup-content { display: block; }
-        
-        .status-badge { padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -74,16 +47,16 @@
                 <td>{{ item.horario }}</td>
                 <td>{{ item.clientes.nome if item.clientes else 'N/A' }}</td>
                 <td>{{ item.servico }}</td>
-                <td>{{ item.status }}</td>
+                <td><span class="status-badge">{{ item.status }}</span></td>
                 <td>
                     <div class="dropup">
-                        <button style="background: none; border: 1px solid #cbd5e1; padding: 5px 10px; cursor: pointer;">Ações ▼</button>
+                        <button class="btn-acoes">Ações ▼</button>
                         <div class="dropup-content">
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
                             <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
                             <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
-                                <input type="datetime-local" name="nova_data" required style="font-size: 0.8rem; margin-bottom: 5px;">
-                                <button type="submit" style="height: 30px; font-size: 0.8rem;">Reagendar</button>
+                                <input type="datetime-local" name="nova_data" required>
+                                <button type="submit">Reagendar</button>
                             </form>
                         </div>
                     </div>
