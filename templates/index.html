@@ -29,7 +29,7 @@
         <form action="{{ url_for('agendar') }}" method="POST">
             <div class="field-wrapper">
                 <label>Cliente</label>
-                <select name="cliente_nome" required>
+                <select name="cliente_id" required>
                     {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
                 </select>
             </div>
@@ -76,17 +76,15 @@
             <tr>
                 <td>{{ item.vendedor }}</td>
                 <td>{{ item.tecnico }}</td>
-                <td>{{ item.horario }}</td>
                 <td>
-                    {# Lógica para exibir o nome do cliente baseado no ID #}
-                    {% set ns = namespace(cliente_nome='N/A') %}
-                    {% for c in clientes %}
-                        {% if c.id|string == item.cliente|string %}
-                            {% set ns.cliente_nome = c.nome %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ ns.cliente_nome }}
+                    {% if item.horario %}
+                        {{ item.horario.split('T')[0].split('-')[2] }}/{{ item.horario.split('T')[0].split('-')[1] }}/{{ item.horario.split('T')[0].split('-')[0] }} 
+                        às {{ item.horario.split('T')[1][:5] }}
+                    {% else %}
+                        N/A
+                    {% endif %}
                 </td>
+                <td>{{ item.clientes.nome if item.clientes else 'N/A' }}</td>
                 <td>{{ item.servico }}</td>
                 <td>{{ item.prioridade }}</td>
                 <td>{{ item.obs }}</td>
@@ -96,7 +94,7 @@
                     <div class="dropup">
                         <button class="btn-acoes">Ações ▼</button>
                         <div class="dropup-content">
-                           <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
+                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
                             <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
                             <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
                                 <input type="datetime-local" name="nova_data" required>

@@ -54,7 +54,8 @@ def login():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    query = supabase.table("agendamentos").select("*")
+    # Fazendo o JOIN com a tabela clientes
+    query = supabase.table("agendamentos").select("*, clientes(nome)")
  
     if current_user.role == 'tecnico': 
         query = query.eq("tecnico", current_user.id)
@@ -91,8 +92,9 @@ def agendar():
     if current_user.role in ['admin', 'vendedor']:
         vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
         
+        # Cliente agora envia o ID
         res = supabase.table("agendamentos").insert({
-            "cliente": request.form.get('cliente_nome'), 
+            "cliente": request.form.get('cliente_id'), 
             "servico": request.form.get('servico'),
             "horario": request.form.get('horario'),
             "tecnico": request.form.get('tecnico'),
