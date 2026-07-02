@@ -56,7 +56,7 @@ def login():
             return redirect(url_for('index'))
     return render_template('login.html')
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
     # Consulta completa para a tabela de agendamentos
@@ -71,10 +71,14 @@ def index():
     clientes = supabase.table("clientes").select("*").execute().data
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     
+    # --- CORREÇÃO ADICIONADA AQUI ---
+    vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
+    
     return render_template('index.html', 
                            agenda=agenda, 
                            clientes=clientes, 
-                           tecnicos=tecnicos, 
+                           tecnicos=tecnicos,
+                           vendedores=vendedores, # Passando a lista para o HTML
                            role=current_user.role, 
                            user=current_user)
 
@@ -100,7 +104,7 @@ def agendar():
             "tecnico": request.form.get('tecnico'),
             "prioridade": request.form.get('prioridade'),
             "obs": request.form.get('obs'),
-            "vendedor": current_user.id,
+            "vendedor": request.form.get('vendedor') or current_user.id, # Pega o selecionado ou o logado
             "status": "Pendente"
         }).execute()
         if res.data:
