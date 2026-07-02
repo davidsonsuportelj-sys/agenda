@@ -23,7 +23,7 @@ button:hover { filter: brightness(90%); }
 /* Tabela e Menu de Ações (CORRIGIDO PARA EVITAR SOBREPOSIÇÃO) */
 .table-responsive { 
     overflow-x: auto; 
-    overflow-y: visible; /* Garantir que menu não seja cortado */
+    overflow-y: visible; /* CRÍTICO: Garantir que menu não seja cortado */
     background: var(--white); 
     border-radius: 12px; 
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
@@ -32,9 +32,9 @@ button:hover { filter: brightness(90%); }
 }
 table { width: 100%; border-collapse: collapse; min-width: 900px; border: 1px solid #e2e8f0; }
 th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; border: 1px solid #e2e8f0; }
-td { padding: 15px; border: 1px solid #e2e8f0; position: static; } /* Alterado para static */
+td { padding: 15px; border: 1px solid #e2e8f0; position: static; } /* CRÍTICO: Alterado para static */
 
-.dropup { position: relative; display: inline-block; z-index: 100; }
+.dropup { position: relative; display: inline-block; z-index: 1000; } /* Z-index alto */
 .btn-acoes { background: var(--primary) !important; color: white !important; height: 35px !important; padding: 5px 15px !important; }
 .dropup-content { 
     display: none; 
@@ -45,7 +45,7 @@ td { padding: 15px; border: 1px solid #e2e8f0; position: static; } /* Alterado p
     border: 1px solid #cbd5e1; 
     border-radius: 8px; 
     box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
-    z-index: 9999;
+    z-index: 9999; /* Garante que fique acima de tudo */
     min-width: 180px; 
     padding: 10px; 
 }
