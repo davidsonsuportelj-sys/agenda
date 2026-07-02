@@ -42,6 +42,7 @@
                 </select>
             </div>
             <div class="field-wrapper"><label>Observação</label><input type="text" name="obs"></div>
+        
             <div class="field-wrapper">
                 <label>Técnico</label>
                 <select name="tecnico">
@@ -86,7 +87,7 @@
                     <div class="dropup">
                         <button class="btn-acoes">Ações ▼</button>
                         <div class="dropup-content">
-                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
+                           <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
                             <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
                             <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
                                 <input type="datetime-local" name="nova_data" required>

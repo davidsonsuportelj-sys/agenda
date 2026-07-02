@@ -98,7 +98,7 @@ def agendar():
     if current_user.role in ['admin', 'vendedor']:
         vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
         
-        # CORREÇÃO: Mapeado 'cliente_id' para a coluna 'cliente' que o banco exige
+        # CORREÇÃO: Mapeando a coluna 'cliente' corretamente conforme erro do Supabase
         res = supabase.table("agendamentos").insert({
             "cliente": request.form.get('cliente_id'), 
             "servico": request.form.get('servico'),
