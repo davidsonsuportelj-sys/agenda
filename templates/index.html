@@ -76,7 +76,14 @@
             <tr>
                 <td>{{ item.vendedor }}</td>
                 <td>{{ item.tecnico }}</td>
-                <td>{{ item.horario }}</td>
+                <td>
+                    {% if item.horario %}
+                        {{ item.horario.split('T')[0].split('-')[2] }}/{{ item.horario.split('T')[0].split('-')[1] }}/{{ item.horario.split('T')[0].split('-')[0] }} 
+                        às {{ item.horario.split('T')[1][:5] }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
                 <td>{{ item.clientes.nome if item.clientes else 'N/A' }}</td>
                 <td>{{ item.servico }}</td>
                 <td>{{ item.prioridade }}</td>

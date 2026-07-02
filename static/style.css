@@ -1,40 +1,20 @@
-/* Variáveis de Cores */
-:root { 
-    --primary: #2563eb; 
-    --bg: #f8fafc; 
-    --text: #1e293b; 
-    --white: #ffffff;
-}
-
+:root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #ffffff; }
 body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-
 form { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
 .field-wrapper { flex: 1; min-width: 140px; }
-
 label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; display: block; color: #475569; }
 input, select { width: 100%; height: 42px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-
 button { height: 42px; padding: 0 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
 button:hover { filter: brightness(90%); }
 
-/* Tabela e Menu de Ações (CORRIGIDO PARA EVITAR SOBREPOSIÇÃO) */
-.table-responsive { 
-    overflow-x: auto; 
-    overflow-y: visible; /* CRÍTICO: Garantir que menu não seja cortado */
-    background: var(--white); 
-    border-radius: 12px; 
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
-    padding: 20px; 
-    margin-bottom: 30px; 
-}
+.table-responsive { overflow-x: auto; overflow-y: visible; background: var(--white); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 30px; }
 table { width: 100%; border-collapse: collapse; min-width: 900px; border: 1px solid #e2e8f0; }
 th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.9rem; border: 1px solid #e2e8f0; }
-td { padding: 15px; border: 1px solid #e2e8f0; position: static; } /* CRÍTICO: Alterado para static */
+td { padding: 15px; border: 1px solid #e2e8f0; position: static; }
 
-.dropup { position: relative; display: inline-block; z-index: 1000; } /* Z-index alto */
+.dropup { position: relative; display: inline-block; z-index: 1000; }
 .btn-acoes { background: var(--primary) !important; color: white !important; height: 35px !important; padding: 5px 15px !important; }
 .dropup-content { 
     display: none; 
@@ -45,7 +25,7 @@ td { padding: 15px; border: 1px solid #e2e8f0; position: static; } /* CRÍTICO: 
     border: 1px solid #cbd5e1; 
     border-radius: 8px; 
     box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
-    z-index: 9999; /* Garante que fique acima de tudo */
+    z-index: 9999;
     min-width: 180px; 
     padding: 10px; 
 }
