@@ -25,17 +25,22 @@
 
     {% if role in ['admin', 'vendedor'] %}
     <div class="card">
-        <h3>Nova Ordem de Serviço</h3>
-        <form action="{{ url_for('agendar') }}" method="POST">
-            <div class="field-wrapper"><label>Cliente</label><select name="cliente_id" required>{% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}</select></div>
-            <div class="field-wrapper"><label>Serviço</label><input type="text" name="servico" required></div>
-            <div class="field-wrapper"><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
-            <div class="field-wrapper"><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
-            <div class="field-wrapper"><label>Observação</label><input type="text" name="obs"></div>
-            <div class="field-wrapper"><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
-            <button type="submit" class="btn-agendar">Agendar</button>
-        </form>
-    </div>
+    <h3>Nova Ordem de Serviço</h3>
+    <form action="{{ url_for('agendar') }}" method="POST">
+        <div class="field-wrapper"><label>Cliente</label><input type="text" name="cliente" required></div>
+        <div class="field-wrapper"><label>Serviço</label><input type="text" name="servico" required></div>
+        <div class="field-wrapper"><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
+        <div class="field-wrapper"><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
+        <div class="field-wrapper"><label>Observação</label><input type="text" name="obs"></div>
+        <div class="field-wrapper"><label>Técnico</label><select name="tecnico">{% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}</select></div>
+        
+        {% if role == 'admin' %}
+        <div class="field-wrapper"><label>Vendedor</label><select name="vendedor">{% for v in vendedores %}<option value="{{ v.username }}">{{ v.username }}</option>{% endfor %}</select></div>
+        {% endif %}
+        
+        <button type="submit">Agendar</button>
+    </form>
+</div>
     {% endif %}
 
     <div class="table-responsive">
