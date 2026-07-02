@@ -29,8 +29,8 @@
         <form action="{{ url_for('agendar') }}" method="POST">
             <div class="field-wrapper">
                 <label>Cliente</label>
-                <select name="cliente_id" required>
-                    {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
+                <select name="cliente_nome" required>
+                    {% for c in clientes %}<option value="{{ c.nome }}">{{ c.nome }}</option>{% endfor %}
                 </select>
             </div>
             <div class="field-wrapper"><label>Serviço</label><input type="text" name="servico" required></div>
@@ -77,7 +77,7 @@
                 <td>{{ item.vendedor }}</td>
                 <td>{{ item.tecnico }}</td>
                 <td>{{ item.horario }}</td>
-                <td>{{ item.clientes.nome if item.clientes else 'N/A' }}</td>
+                <td>{{ item.cliente }}</td>
                 <td>{{ item.servico }}</td>
                 <td>{{ item.prioridade }}</td>
                 <td>{{ item.obs }}</td>

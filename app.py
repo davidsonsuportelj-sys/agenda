@@ -59,7 +59,8 @@ def login():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    query = supabase.table("agendamentos").select("*, clientes(nome)")
+    # Removido o join 'clientes(nome)' pois tratamos a coluna 'cliente' como texto agora
+    query = supabase.table("agendamentos").select("*")
  
     if current_user.role == 'tecnico': 
         query = query.eq("tecnico", current_user.id)
@@ -98,9 +99,10 @@ def agendar():
     if current_user.role in ['admin', 'vendedor']:
         vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
         
-        # CORREÇÃO: Mapeando a coluna 'cliente' corretamente conforme erro do Supabase
+        # O formulário envia o nome do cliente através do campo 'cliente_nome' ou similar. 
+        # Ajuste o 'cliente' para receber o texto.
         res = supabase.table("agendamentos").insert({
-            "cliente": request.form.get('cliente_id'), 
+            "cliente": request.form.get('cliente_nome'), 
             "servico": request.form.get('servico'),
             "horario": request.form.get('horario'),
             "tecnico": request.form.get('tecnico'),
