@@ -13,11 +13,21 @@
         <div>Bem-vindo, <strong>{{ current_user.id }}</strong> | <a href="{{ url_for('logout') }}">Sair</a></div>
     </div>
 
+    <div class="card">
+        <h3>Cadastrar Novo Cliente</h3>
+        <form action="{{ url_for('cadastrar_cliente') }}" method="POST">
+            <div class="field-wrapper"><label>Nome</label><input type="text" name="nome" required></div>
+            <div class="field-wrapper"><label>Telefone</label><input type="text" name="telefone"></div>
+            <div class="field-wrapper"><label>Endereço</label><input type="text" name="endereco"></div>
+            <button type="submit" class="btn-agendar">Salvar Cliente</button>
+        </form>
+    </div>
+
     {% if role in ['admin', 'vendedor'] %}
     <div class="card">
         <h3>Nova Ordem de Serviço</h3>
         <form action="{{ url_for('agendar') }}" method="POST">
-            <div class="field-wrapper"><label>Cliente</label><input type="text" name="cliente" required></div>
+            <div class="field-wrapper"><label>Cliente</label><select name="cliente_id" required>{% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}</select></div>
             <div class="field-wrapper"><label>Serviço</label><input type="text" name="servico" required></div>
             <div class="field-wrapper"><label>Data/Hora</label><input type="datetime-local" name="horario" required></div>
             <div class="field-wrapper"><label>Prioridade</label><select name="prioridade"><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
@@ -34,23 +44,21 @@
             {% for item in agenda %}
             <tr class="{% if item.status == 'Pendente' %}row-pendente{% elif item.status == 'Concluído' %}row-concluido{% elif item.status == 'Cancelado' %}row-cancelado{% elif item.status == 'Reagendado' %}row-reagendado{% endif %}">
                 <td>{{ item.vendedor }}</td><td>{{ item.tecnico }}</td>
-                <td>{{ item.horario[8:10] }}/{{ item.horario[5:7] }}/{{ item.horario[0:4] }} {{ item.horario[11:16] }}</td>
+                <td>{{ item.horario }}</td>
                 <td>{{ item.cliente }}</td><td>{{ item.servico }}</td><td>{{ item.prioridade }}</td>
-                <td class="obs-cell" title="{{ item.obs }}">{{ item.obs }}</td>
-                <td><span class="status-badge {% if item.status == 'Pendente' %}text-pendente{% elif item.status == 'Concluído' %}text-concluido{% elif item.status == 'Cancelado' %}text-cancelado{% elif item.status == 'Reagendado' %}text-reagendado{% endif %}">{{ item.status }}</span></td>
+                <td class="obs-cell">{{ item.obs }}</td>
+                <td><span class="status-badge">{{ item.status }}</span></td>
                 <td>
                     {% if item.status != 'Concluído' and item.status != 'Cancelado' %}
                     <div class="dropup">
                         <button class="btn-acoes">Ações ▼</button>
                         <div class="dropup-content">
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
-                            {% if role != 'tecnico' %}
-                                <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
-                                <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
-                                    <input type="datetime-local" name="nova_data" required>
-                                    <button type="submit">Reagendar</button>
-                                </form>
-                            {% endif %}
+                            <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
+                            <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
+                                <input type="datetime-local" name="nova_data" required>
+                                <button type="submit">Reagendar</button>
+                            </form>
                         </div>
                     </div>
                     {% endif %}
