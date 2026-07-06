@@ -85,12 +85,12 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if item.clientes and item.clientes.nome %}
-                        {{ item.clientes.nome }}
-                    {% else %}
-                        Não definido
-                    {% endif %}
-                </td>
+    {% if item.clientes and item.clientes.nome %}
+        {{ item.clientes.nome }}
+    {% else %}
+        <span style="color: red;">Não definido</span>
+    {% endif %}
+</td>
                 <td>{{ item.servico }}</td>
                 <td>{{ item.prioridade }}</td>
                 <td>{{ item.obs }}</td>
