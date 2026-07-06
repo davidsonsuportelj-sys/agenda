@@ -84,7 +84,13 @@
                         N/A
                     {% endif %}
                 </td>
-                <td>{{ item.clientes.nome if item.clientes else 'N/A' }}</td>
+                <td>
+                    {% if item.clientes and item.clientes.nome %}
+                        {{ item.clientes.nome }}
+                    {% else %}
+                        Não definido
+                    {% endif %}
+                </td>
                 <td>{{ item.servico }}</td>
                 <td>{{ item.prioridade }}</td>
                 <td>{{ item.obs }}</td>
