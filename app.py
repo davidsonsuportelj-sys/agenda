@@ -53,7 +53,7 @@ def login():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    query = supabase.table("agendamentos").select("*, clientes(id, nome)")
+    query = supabase.table("agendamentos").select("*")
  
     if current_user.role == 'tecnico': 
         query = query.eq("tecnico", current_user.id)
