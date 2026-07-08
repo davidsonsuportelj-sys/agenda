@@ -143,23 +143,42 @@
     </div>
 
     <script>
-        function prevenirDuploSubmit(btn) {
-            setTimeout(function() {
-                btn.disabled = true;
-                btn.innerText = 'Processando...';
-            }, 10);
-        }
+    function prevenirDuploSubmit(btn) {
+        setTimeout(function() {
+            btn.disabled = true;
+            btn.innerText = 'Processando...';
+        }, 10);
+    }
 
-        document.querySelectorAll('.dropup').forEach(function(dropup) {
-            dropup.addEventListener('mouseenter', function() {
-                var content = this.querySelector('.dropup-content');
-                var rect = this.getBoundingClientRect();
+    document.querySelectorAll('.dropup').forEach(function(dropup) {
+        dropup.addEventListener('mouseenter', function() {
+            var content = this.querySelector('.dropup-content');
+            var rect = this.getBoundingClientRect();
+            var contentHeight = content.offsetHeight;
+            var contentWidth = content.offsetWidth;
+            var viewportWidth = window.innerWidth;
+            var viewportHeight = window.innerHeight;
 
+            // Posicionamento horizontal
+            if (rect.right + contentWidth > viewportWidth) {
+                // Está perto da borda direita, alinha pela direita
+                content.style.left = 'auto';
+                content.style.right = (viewportWidth - rect.right) + 'px';
+            } else {
                 content.style.left = rect.left + 'px';
-                content.style.top = (rect.top - content.offsetHeight) + 'px';
-            });
+                content.style.right = 'auto';
+            }
+
+            // Posicionamento vertical
+            if (rect.top - contentHeight < 0) {
+                // Não cabe em cima, abre para baixo
+                content.style.top = rect.bottom + 'px';
+            } else {
+                content.style.top = (rect.top - contentHeight) + 'px';
+            }
         });
-    </script>
+    });
+</script>
 
 </body>
 </html>
