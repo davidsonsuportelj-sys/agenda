@@ -134,7 +134,6 @@ def formatar_data(valor):
         return "N/A"
     try:
         from datetime import datetime
-        # Supabase geralmente retorna no formato ISO 8601 completo
         dt = datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
         return dt.strftime('%d/%m/%Y às %H:%M')
     except (ValueError, TypeError):
@@ -185,10 +184,8 @@ def login():
             senha_valida = False
 
             if senha_armazenada.startswith(('pbkdf2:', 'scrypt:')):
-                # Senha já está no formato hash (fluxo normal)
                 senha_valida = check_password_hash(senha_armazenada, pass_in)
             elif senha_armazenada == pass_in:
-                # Senha legada em texto puro: valida e migra para hash automaticamente
                 senha_valida = True
                 novo_hash = generate_password_hash(pass_in)
                 supabase.table("usuarios").update({"password": novo_hash}).eq("username", user_in).execute()
@@ -216,7 +213,7 @@ def index():
     ordenar_por = request.args.get('ordenar_por', 'horario').strip()
     direcao = request.args.get('direcao', 'desc').strip()
 
-    # Whitelist de colunas permitidas para ordenação (segurança contra injeção SQL/template)
+    # Whitelist de colunas permitidas para ordenação (segurança contra injeção)
     colunas_validas = {
         'vendedor', 'tecnico', 'horario', 'servico',
         'prioridade', 'status', 'obs'
@@ -229,7 +226,7 @@ def index():
 
     query = supabase.table("agendamentos").select("*, clientes(nome)")
 
-    # FILTROS POR PERFIL (existentes)
+    # FILTROS POR PERFIL
     if current_user.role == 'tecnico':
         query = query.eq("tecnico", current_user.id)
     elif current_user.role == 'vendedor':
@@ -252,40 +249,37 @@ def index():
         query = query.gte("horario", data_inicio)
 
     if data_fim:
-        # Inclui o dia inteiro (até 23:59:59)
         if len(data_fim) == 10:
             data_fim_completo = data_fim + "T23:59:59"
         else:
             data_fim_completo = data_fim
         query = query.lte("horario", data_fim_completo)
 
-    # NOVO: aplica ordenação dinâmica
-    agenda = query.order(ordenar_por, desc=(direcao == 'desc')).order("id", desc=True).execute().data
+    # NOVO: aplica ordenação dinâmica (apenas UMA chamada .order)
+    is_desc = direcao == 'desc'
+    query = query.order(ordenar_por, desc=is_desc)
+    agenda = query.execute().data
 
     # BUSCA POR NOME DO CLIENTE (filtra em memória após enriquecimento)
     if busca:
         termo = busca.lower()
         agenda_filtrada = []
         for item in agenda:
-            # Tenta buscar o nome no relacionamento
             nome_relacionamento = ''
             if item.get('clientes') and item['clientes'].get('nome'):
                 nome_relacionamento = item['clientes']['nome']
 
-            # Tenta buscar por id do cliente
             nome_cache = ''
             if item.get('cliente'):
                 nome_cache = cliente_nome_por_id(item['cliente']) or ''
 
             if termo in (nome_relacionamento.lower() or '') or termo in (nome_cache.lower() or ''):
-                # Garante que o nome do cliente seja preenchido se encontrado por cache
                 if not item.get('clientes'):
                     item['clientes'] = {}
                 item['clientes']['nome'] = nome_relacionamento or nome_cache
                 agenda_filtrada.append(item)
         agenda = agenda_filtrada
     else:
-        # Enriquece os itens da agenda com o nome do cliente caso o relacionamento falhe
         for item in agenda:
             if (not item.get('clientes') or not item['clientes'].get('nome')) and item.get('cliente'):
                 nome_cliente = cliente_nome_por_id(item['cliente'])
@@ -303,7 +297,6 @@ def index():
         'vendedor': vendedor_filtro,
         'data_inicio': data_inicio,
         'data_fim': data_fim,
-        # NOVO
         'ordenar_por': ordenar_por,
         'direcao': direcao
     }
@@ -425,7 +418,6 @@ def reagendar(id):
 @app.route('/mudar_status/<id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
-    # Validação básica do status recebido via URL
     status_permitidos = {'Pendente', 'Em andamento', 'Concluído', 'Reagendado', 'Cancelado'}
     if novo_status not in status_permitidos:
         flash("Status informado não é válido.", "danger")
@@ -451,13 +443,11 @@ def mudar_status(id, novo_status):
 @login_required
 def cancelar(id):
     item = get_os_ou_none(id)
-    # Técnico não pode cancelar, apenas finalizar/reagendar suas próprias OS
     if not item or not usuario_pode_gerenciar(item, incluir_tecnico=False):
         flash("Você não tem permissão para cancelar esta OS.", "danger")
         return redirect(url_for('index'))
 
     try:
-        # Impede cancelar uma OS já concluída ou cancelada
         if item.get("status") in ['Concluído', 'Cancelado']:
             flash("Esta OS já está finalizada ou cancelada.", "warning")
             return redirect(url_for('index'))
