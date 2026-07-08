@@ -141,6 +141,25 @@ def formatar_data(valor):
         return valor
 
 
+# FILTRO PARA NORMALIZAR STATUS EM CLASSES CSS
+@app.template_filter('slug_status')
+def slug_status(value):
+    """Converte um status em um slug seguro para usar em classes CSS."""
+    if not value:
+        return ''
+    mapa = {
+        'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a',
+        'é': 'e', 'ê': 'e',
+        'í': 'i',
+        'ó': 'o', 'ô': 'o', 'õ': 'o',
+        'ú': 'u',
+        'ç': 'c'
+    }
+    slug = ''.join(mapa.get(c.lower(), c.lower()) for c in value)
+    slug = slug.replace(' ', '-').replace('_', '-')
+    return slug
+
+
 @login_manager.user_loader
 def load_user(user_id):
     response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
@@ -185,27 +204,90 @@ def login():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    # CORREÇÃO: mantemos o relacionamento com a tabela clientes via Supabase.
-    # Adicionamos fallback de busca manual caso o relacionamento não retorne o nome.
+    # CAPTURA DOS FILTROS
+    busca = request.args.get('busca', '').strip()
+    status = request.args.get('status', '').strip()
+    tecnico_filtro = request.args.get('tecnico', '').strip()
+    vendedor_filtro = request.args.get('vendedor', '').strip()
+    data_inicio = request.args.get('data_inicio', '').strip()
+    data_fim = request.args.get('data_fim', '').strip()
+
     query = supabase.table("agendamentos").select("*, clientes(nome)")
 
+    # FILTROS POR PERFIL (existentes)
     if current_user.role == 'tecnico':
         query = query.eq("tecnico", current_user.id)
     elif current_user.role == 'vendedor':
         query = query.eq("vendedor", current_user.id)
 
-    agenda = query.order("id", desc=True).execute().data
+    # FILTRO POR STATUS
+    if status:
+        query = query.eq("status", status)
 
-    # Enriquece os itens da agenda com o nome do cliente caso o relacionamento falhe
-    for item in agenda:
-        if (not item.get('clientes') or not item['clientes'].get('nome')) and item.get('cliente'):
-            nome_cliente = cliente_nome_por_id(item['cliente'])
-            if nome_cliente:
-                item['clientes'] = {'nome': nome_cliente}
+    # FILTRO POR TÉCNICO (disponível para admin e vendedor)
+    if tecnico_filtro and current_user.role in ['admin', 'vendedor']:
+        query = query.eq("tecnico", tecnico_filtro)
+
+    # FILTRO POR VENDEDOR (disponível apenas para admin)
+    if vendedor_filtro and current_user.role == 'admin':
+        query = query.eq("vendedor", vendedor_filtro)
+
+    # FILTRO POR PERÍODO
+    if data_inicio:
+        query = query.gte("horario", data_inicio)
+
+    if data_fim:
+        # Inclui o dia inteiro (até 23:59:59)
+        if len(data_fim) == 10:
+            data_fim_completo = data_fim + "T23:59:59"
+        else:
+            data_fim_completo = data_fim
+        query = query.lte("horario", data_fim_completo)
+
+    agenda = query.order("horario", desc=True).order("id", desc=True).execute().data
+
+    # BUSCA POR NOME DO CLIENTE (filtra em memória após enriquecimento)
+    if busca:
+        termo = busca.lower()
+        agenda_filtrada = []
+        for item in agenda:
+            # Tenta buscar o nome no relacionamento
+            nome_relacionamento = ''
+            if item.get('clientes') and item['clientes'].get('nome'):
+                nome_relacionamento = item['clientes']['nome']
+
+            # Tenta buscar por id do cliente
+            nome_cache = ''
+            if item.get('cliente'):
+                nome_cache = cliente_nome_por_id(item['cliente']) or ''
+
+            if termo in (nome_relacionamento.lower() or '') or termo in (nome_cache.lower() or ''):
+                # Garante que o nome do cliente seja preenchido se encontrado por cache
+                if not item.get('clientes'):
+                    item['clientes'] = {}
+                item['clientes']['nome'] = nome_relacionamento or nome_cache
+                agenda_filtrada.append(item)
+        agenda = agenda_filtrada
+    else:
+        # Enriquece os itens da agenda com o nome do cliente caso o relacionamento falhe
+        for item in agenda:
+            if (not item.get('clientes') or not item['clientes'].get('nome')) and item.get('cliente'):
+                nome_cliente = cliente_nome_por_id(item['cliente'])
+                if nome_cliente:
+                    item['clientes'] = {'nome': nome_cliente}
 
     clientes = supabase.table("clientes").select("*").execute().data
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
+
+    filtros = {
+        'busca': busca,
+        'status': status,
+        'tecnico': tecnico_filtro,
+        'vendedor': vendedor_filtro,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim
+    }
 
     return render_template(
         'index.html',
@@ -214,7 +296,8 @@ def index():
         tecnicos=tecnicos,
         vendedores=vendedores,
         role=current_user.role,
-        user=current_user
+        user=current_user,
+        filtros=filtros
     )
 
 

@@ -76,8 +76,47 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* ==================== FILTROS ==================== */
+
+.card-filtros {
+    border-top: 4px solid var(--primary);
+}
+
+.form-filtros .field-wrapper.field-wrapper-btn {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.btn-limpar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 20px;
+    background: #64748b;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn-limpar:hover {
+    filter: brightness(90%);
+}
+
+.contador-resultados {
+    margin: 0 0 15px 0;
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+/* ==================== TABELA ==================== */
+
 .table-responsive {
-    overflow: visible;
+    overflow-x: auto;
     background: var(--white);
     border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
@@ -105,6 +144,35 @@ td {
     border: 1px solid #e2e8f0;
     position: static;
 }
+
+/* ==================== CORES POR STATUS ==================== */
+
+.status-pendente td {
+    background-color: #fff7ed;
+    color: #9a3412;
+}
+
+.status-em-andamento td {
+    background-color: #eff6ff;
+    color: #1e40af;
+}
+
+.status-concluido td {
+    background-color: #f0fdf4;
+    color: #166534;
+}
+
+.status-reagendado td {
+    background-color: #f3e8ff;
+    color: #6b21a8;
+}
+
+.status-cancelado td {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* ==================== AÇÕES DROPUP ==================== */
 
 .dropup {
     position: relative;
@@ -151,6 +219,8 @@ td {
     margin-top: 5px;
     padding-top: 5px;
 }
+
+/* ==================== ALERTAS ==================== */
 
 .alert {
     border-left: 4px solid;

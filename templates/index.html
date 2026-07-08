@@ -86,7 +86,71 @@
     </div>
     {% endif %}
 
-    <div class="table-responsive">
+    <!-- BARRA DE FILTROS -->
+    <div class="card card-filtros">
+        <h3>Filtros de Pesquisa</h3>
+        <form method="GET" action="{{ url_for('index') }}" class="form-filtros">
+            <div class="field-wrapper">
+                <label for="busca">Buscar Cliente</label>
+                <input type="text" id="busca" name="busca" value="{{ filtros.busca if filtros else '' }}" placeholder="Nome do cliente...">
+            </div>
+            <div class="field-wrapper">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="Pendente" {% if filtros and filtros.status == 'Pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="Em andamento" {% if filtros and filtros.status == 'Em andamento' %}selected{% endif %}>Em andamento</option>
+                    <option value="Concluído" {% if filtros and filtros.status == 'Concluído' %}selected{% endif %}>Concluído</option>
+                    <option value="Reagendado" {% if filtros and filtros.status == 'Reagendado' %}selected{% endif %}>Reagendado</option>
+                    <option value="Cancelado" {% if filtros and filtros.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+            {% if role in ['admin', 'vendedor'] %}
+            <div class="field-wrapper">
+                <label for="tecnico">Técnico</label>
+                <select id="tecnico" name="tecnico">
+                    <option value="">Todos</option>
+                    {% for t in tecnicos %}
+                    <option value="{{ t.username }}" {% if filtros and filtros.tecnico == t.username %}selected{% endif %}>
+                        {{ t.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            {% if role == 'admin' %}
+            <div class="field-wrapper">
+                <label for="vendedor">Vendedor</label>
+                <select id="vendedor" name="vendedor">
+                    <option value="">Todos</option>
+                    {% for v in vendedores %}
+                    <option value="{{ v.username }}" {% if filtros and filtros.vendedor == v.username %}selected{% endif %}>
+                        {{ v.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="field-wrapper">
+                <label for="data_inicio">Data Início</label>
+                <input type="date" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio if filtros else '' }}">
+            </div>
+            <div class="field-wrapper">
+                <label for="data_fim">Data Fim</label>
+                <input type="date" id="data_fim" name="data_fim" value="{{ filtros.data_fim if filtros else '' }}">
+            </div>
+            <div class="field-wrapper field-wrapper-btn">
+                <button type="submit">Filtrar</button>
+                <a href="{{ url_for('index') }}" class="btn-limpar">Limpar</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- CONTADOR E TABELA -->
+    <div class="card table-responsive">
+        <p class="contador-resultados">
+            <strong>{{ agenda|length }}</strong> registro(s) encontrado(s)
+        </p>
         <table>
             <tr>
                 <th>Vendedor</th>
@@ -100,7 +164,7 @@
                 <th>Ações</th>
             </tr>
             {% for item in agenda %}
-            <tr>
+            <tr class="status-{{ item.status | slug_status }}">
                 <td>{{ item.vendedor }}</td>
                 <td>{{ item.tecnico }}</td>
                 <td>
@@ -172,13 +236,13 @@
             // Posicionamento vertical
             if (rect.top - contentHeight < 0) {
                 // Não cabe em cima, abre para baixo
-                content.style.top = rect.bottom + 'px';
+                content.top = rect.bottom + 'px';
             } else {
-                content.style.top = (rect.top - contentHeight) + 'px';
+                content.top = (rect.top - contentHeight) + 'px';
             }
         });
     });
-</script>
+    </script>
 
 </body>
 </html>
