@@ -121,8 +121,8 @@ def cliente_nome_por_id(cliente_id):
         response = supabase.table("clientes").select("nome").eq("id", cliente_id).single().execute()
         if response.data and response.data.get("nome"):
             return response.data["nome"]
-    except Exception:
-        pass
+    except Exception as e:
+        app_logger.warning(f"Cliente não encontrado para id={cliente_id}: {e}")
     return None
 
 
@@ -183,12 +183,15 @@ def login():
             senha_armazenada = user_data.get('password', '')
             senha_valida = False
 
-            if senha_armazenada.startswith(('pbkdf2:', 'scrypt:')):
+            # Tenta validar como hash (funciona com qualquer método do Werkzeug)
+            try:
                 senha_valida = check_password_hash(senha_armazenada, pass_in)
-            elif senha_armazenada == pass_in:
-                senha_valida = True
-                novo_hash = generate_password_hash(pass_in)
-                supabase.table("usuarios").update({"password": novo_hash}).eq("username", user_in).execute()
+            except (ValueError, TypeError):
+                # Fallback: senha em texto puro (legado) — migra automaticamente para hash
+                if senha_armazenada == pass_in:
+                    senha_valida = True
+                    novo_hash = generate_password_hash(pass_in)
+                    supabase.table("usuarios").update({"password": novo_hash}).eq("username", user_in).execute()
 
             if senha_valida:
                 login_user(User(user_data['username'], user_data['role']))
@@ -355,10 +358,7 @@ def agendar():
         horario = validar_texto_simples(request.form.get('horario'), "Data/Hora", obrigatorio=True, tamanho_max=30)
         prioridade = validar_prioridade(request.form.get('prioridade'))
         obs = validar_texto_simples(request.form.get('obs'), "Observação", obrigatorio=False, tamanho_max=500)
-        tecnico = request.form.get('tecnico')
-
-        if not tecnico:
-            raise BadRequest("O campo 'Técnico' é obrigatório.")
+        tecnico = validar_texto_simples(request.form.get('tecnico'), "Técnico", obrigatorio=True, tamanho_max=100)
 
         vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
 
@@ -415,10 +415,12 @@ def reagendar(id):
     return redirect(url_for('index'))
 
 
-@app.route('/mudar_status/<id>/<novo_status>')
+@app.route('/mudar_status/<id>', methods=['POST'])
 @login_required
-def mudar_status(id, novo_status):
+def mudar_status(id):
     status_permitidos = {'Pendente', 'Em andamento', 'Concluído', 'Reagendado', 'Cancelado'}
+    novo_status = request.form.get('novo_status', '').strip()
+
     if novo_status not in status_permitidos:
         flash("Status informado não é válido.", "danger")
         return redirect(url_for('index'))
@@ -439,7 +441,7 @@ def mudar_status(id, novo_status):
     return redirect(url_for('index'))
 
 
-@app.route('/cancelar/<id>')
+@app.route('/cancelar/<id>', methods=['POST'])
 @login_required
 def cancelar(id):
     item = get_os_ou_none(id)
@@ -448,11 +450,17 @@ def cancelar(id):
         return redirect(url_for('index'))
 
     try:
-        if item.get("status") in ['Concluído', 'Cancelado']:
+        # Atualização atômica: só cancela se o status NÃO for Concluído ou Cancelado
+        response = supabase.table("agendamentos") \
+            .update({"status": "Cancelado"}) \
+            .eq("id", id) \
+            .filter("status", "not.in", '(Concluído,Cancelado)') \
+            .execute()
+
+        if not response.data:
             flash("Esta OS já está finalizada ou cancelada.", "warning")
             return redirect(url_for('index'))
 
-        supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
         registrar_log(id, "Cancelou OS")
         flash("OS cancelada com sucesso!", "success")
     except Exception as e:

@@ -245,6 +245,46 @@ th a.sort-link {
     padding-top: 5px;
 }
 
+/* ==================== BOTÕES DE AÇÃO (APARÊNCIA DE LINK) ==================== */
+
+.btn-link-acao {
+    all: unset;
+    display: block;
+    width: 100%;
+    padding: 8px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    border-radius: 4px;
+    transition: background 0.15s;
+    text-align: left;
+}
+
+.btn-link-acao:hover {
+    background: #f8fafc;
+}
+
+.btn-link-perigo {
+    color: #dc2626;
+}
+
+.btn-link-perigo:hover {
+    background: #fef2f2;
+}
+
+/* ==================== FORMULÁRIOS NO DROPUP ==================== */
+
+.dropup-form {
+    display: block;
+    flex-direction: unset;
+    flex-wrap: unset;
+    gap: unset;
+    align-items: unset;
+    margin: 0;
+    padding: 0;
+}
+
 /* ==================== ALERTAS ==================== */
 
 .alert {

@@ -203,8 +203,15 @@
                     <div class="dropup">
                         <button class="btn-acoes">Ações ▼</button>
                         <div class="dropup-content">
-                            <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
-                            <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
+                            <form action="{{ url_for('mudar_status', id=item.id) }}" method="POST" class="dropup-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="novo_status" value="Concluído">
+                                <button type="submit" class="btn-link-acao" onclick="return confirmarAcao('finalizar esta OS', this)">Finalizar</button>
+                            </form>
+                            <form action="{{ url_for('cancelar', id=item.id) }}" method="POST" class="dropup-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-link-acao btn-link-perigo" onclick="return confirmarAcao('cancelar esta OS', this)">Cancelar</button>
+                            </form>
                             <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="datetime-local" name="nova_data" required>
@@ -221,10 +228,25 @@
 
     <script>
     function prevenirDuploSubmit(btn) {
+        var textoOriginal = btn.innerText;
         setTimeout(function() {
             btn.disabled = true;
             btn.innerText = 'Processando...';
         }, 10);
+
+        // Reabilita após 8 segundos como fallback (caso a requisição falhe silenciosamente)
+        setTimeout(function() {
+            btn.disabled = false;
+            btn.innerText = textoOriginal;
+        }, 8000);
+    }
+
+    function confirmarAcao(acao, btn) {
+        if (!confirm('Tem certeza que deseja ' + acao + '?')) {
+            return false;
+        }
+        prevenirDuploSubmit(btn);
+        return true;
     }
 
     document.querySelectorAll('.dropup').forEach(function(dropup) {
