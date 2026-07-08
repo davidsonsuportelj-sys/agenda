@@ -145,6 +145,31 @@ td {
     position: static;
 }
 
+/* ==================== ORDENAÇÃO POR COLUNA ==================== */
+
+.sort-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.sort-link:hover {
+    color: var(--primary);
+}
+
+.sort-indicator {
+    font-size: 0.75rem;
+    color: var(--primary);
+}
+
+th a.sort-link {
+    cursor: pointer;
+}
+
 /* ==================== CORES POR STATUS ==================== */
 
 .status-pendente td {

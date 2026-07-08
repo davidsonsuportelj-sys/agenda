@@ -8,6 +8,19 @@
 </head>
 <body>
 
+    {% macro sort_link(coluna, titulo) %}
+        {% set nova_direcao = 'asc' if filtros.ordenar_por == coluna and filtros.direcao == 'desc' else 'desc' %}
+        {% if coluna == 'obs' %}
+            {% set label = 'Observação' %}
+        {% endif %}
+        <a href="{{ url_for('index', ordenar_por=coluna, direcao=nova_direcao, busca=filtros.busca, status=filtros.status, tecnico=filtros.tecnico, vendedor=filtros.vendedor, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim) }}" class="sort-link">
+            {{ titulo }}
+            {% if filtros.ordenar_por == coluna %}
+                <span class="sort-indicator">{{ '▲' if filtros.direcao == 'asc' else '▼' }}</span>
+            {% endif %}
+        </a>
+    {% endmacro %}
+
     <div class="header">
         <h1>Agenda de Serviços</h1>
         <div>
@@ -153,14 +166,14 @@
         </p>
         <table>
             <tr>
-                <th>Vendedor</th>
-                <th>Técnico</th>
-                <th>Data/Hora</th>
+                <th>{{ sort_link('vendedor', 'Vendedor') }}</th>
+                <th>{{ sort_link('tecnico', 'Técnico') }}</th>
+                <th>{{ sort_link('horario', 'Data/Hora') }}</th>
                 <th>Cliente</th>
-                <th>Serviço</th>
-                <th>Prioridade</th>
-                <th>Observação</th>
-                <th>Status</th>
+                <th>{{ sort_link('servico', 'Serviço') }}</th>
+                <th>{{ sort_link('prioridade', 'Prioridade') }}</th>
+                <th>{{ sort_link('obs', 'Observação') }}</th>
+                <th>{{ sort_link('status', 'Status') }}</th>
                 <th>Ações</th>
             </tr>
             {% for item in agenda %}
@@ -236,9 +249,9 @@
             // Posicionamento vertical
             if (rect.top - contentHeight < 0) {
                 // Não cabe em cima, abre para baixo
-                content.top = rect.bottom + 'px';
+                content.style.top = rect.bottom + 'px';
             } else {
-                content.top = (rect.top - contentHeight) + 'px';
+                content.style.top = (rect.top - contentHeight) + 'px';
             }
         });
     });

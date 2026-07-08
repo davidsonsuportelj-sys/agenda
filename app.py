@@ -212,6 +212,21 @@ def index():
     data_inicio = request.args.get('data_inicio', '').strip()
     data_fim = request.args.get('data_fim', '').strip()
 
+    # NOVO: parâmetros de ordenação
+    ordenar_por = request.args.get('ordenar_por', 'horario').strip()
+    direcao = request.args.get('direcao', 'desc').strip()
+
+    # Whitelist de colunas permitidas para ordenação (segurança contra injeção SQL/template)
+    colunas_validas = {
+        'vendedor', 'tecnico', 'horario', 'servico',
+        'prioridade', 'status', 'obs'
+    }
+    if ordenar_por not in colunas_validas:
+        ordenar_por = 'horario'
+
+    if direcao not in ['asc', 'desc']:
+        direcao = 'desc'
+
     query = supabase.table("agendamentos").select("*, clientes(nome)")
 
     # FILTROS POR PERFIL (existentes)
@@ -244,7 +259,8 @@ def index():
             data_fim_completo = data_fim
         query = query.lte("horario", data_fim_completo)
 
-    agenda = query.order("horario", desc=True).order("id", desc=True).execute().data
+    # NOVO: aplica ordenação dinâmica
+    agenda = query.order(ordenar_por, desc=(direcao == 'desc')).order("id", desc=True).execute().data
 
     # BUSCA POR NOME DO CLIENTE (filtra em memória após enriquecimento)
     if busca:
@@ -286,7 +302,10 @@ def index():
         'tecnico': tecnico_filtro,
         'vendedor': vendedor_filtro,
         'data_inicio': data_inicio,
-        'data_fim': data_fim
+        'data_fim': data_fim,
+        # NOVO
+        'ordenar_por': ordenar_por,
+        'direcao': direcao
     }
 
     return render_template(
