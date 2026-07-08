@@ -27,6 +27,7 @@
       {% endif %}
     {% endwith %}
 
+    {% if role in ['admin', 'vendedor'] %}
     <div class="card">
         <h3>Cadastrar Novo Cliente</h3>
         <form action="{{ url_for('cadastrar_cliente') }}" method="POST">
@@ -37,6 +38,7 @@
             <button type="submit" onclick="prevenirDuploSubmit(this)">Salvar Cliente</button>
         </form>
     </div>
+    {% endif %}
 
     {% if role in ['admin', 'vendedor'] %}
     <div class="card">
