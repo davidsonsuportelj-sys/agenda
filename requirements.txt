@@ -1,6 +1,6 @@
 flask
 flask-login
-supabase
+flask-wtf
 python-dotenv
-requests
-gunicorn
+supabase
+werkzeug

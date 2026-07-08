@@ -1,27 +1,51 @@
 import os
+import logging
 from flask import Flask, render_template, request, redirect, url_for, flash, abort
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_wtf.csrf import CSRFProtect
 from supabase import create_client
 from dotenv import load_dotenv
+from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao")
+
+# SEGURANÇA: SECRET_KEY é obrigatória para produção, sem fallback fraco.
+app.secret_key = os.getenv("SECRET_KEY")
+if not app.secret_key:
+    raise RuntimeError(
+        "A variável de ambiente SECRET_KEY não está configurada. "
+        "Defina uma chave secreta forte no arquivo .env antes de iniciar a aplicação."
+    )
+
+csrf = CSRFProtect(app)
 
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
+
+if not url or not key:
+    raise RuntimeError(
+        "As variáveis SUPABASE_URL e SUPABASE_KEY são obrigatórias."
+    )
+
 supabase = create_client(url, key)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Configuração de logging estruturado para produção
+logging.basicConfig(level=logging.INFO)
+app_logger = logging.getLogger(__name__)
+
+
 class User(UserMixin):
     def __init__(self, username, role):
         self.id = username
         self.role = role
+
 
 def get_os_ou_none(os_id):
     """Busca uma OS pelo id. Retorna None se não existir."""
@@ -30,6 +54,7 @@ def get_os_ou_none(os_id):
         return response.data
     except Exception:
         return None
+
 
 def usuario_pode_gerenciar(item, incluir_tecnico=True):
     """Regras de autorização para ações sobre uma OS:
@@ -45,22 +70,84 @@ def usuario_pode_gerenciar(item, incluir_tecnico=True):
         return True
     return False
 
+
 def registrar_log(os_id, acao):
     try:
         supabase.table("logs_os").insert({
-            "usuario": current_user.id, 
-            "os_id": os_id, 
+            "usuario": current_user.id,
+            "os_id": os_id,
             "acao": acao
         }).execute()
     except Exception as e:
-        print(f"Erro ao registrar log: {e}")
+        app_logger.error(f"Erro ao registrar log: {e}")
+
+
+def validar_texto_simples(valor, nome_campo, obrigatorio=True, tamanho_max=255):
+    """
+    Valida campos de texto simples. Retorna o valor sanitizado (strip)
+    ou levanta BadRequest.
+    """
+    valor = (valor or "").strip()
+
+    if obrigatorio and not valor:
+        raise BadRequest(f"O campo '{nome_campo}' é obrigatório.")
+
+    if len(valor) > tamanho_max:
+        raise BadRequest(f"O campo '{nome_campo}' excede o tamanho máximo de {tamanho_max} caracteres.")
+
+    return valor
+
+
+def validar_cliente_id(cliente_id_raw):
+    """Converte e valida o id do cliente. Retorna int ou levanta BadRequest."""
+    try:
+        cliente_id = int(cliente_id_raw)
+        if cliente_id <= 0:
+            raise ValueError
+        return cliente_id
+    except (TypeError, ValueError):
+        raise BadRequest("O campo 'cliente_id' deve ser um número positivo válido.")
+
+
+def validar_prioridade(prioridade):
+    """Valida se a prioridade está dentro das opções permitidas."""
+    opcoes_validas = {'Baixa', 'Média', 'Alta'}
+    return prioridade if prioridade in opcoes_validas else 'Média'
+
+
+def cliente_nome_por_id(cliente_id):
+    """Busca o nome do cliente pelo id. Retorna None se não encontrado."""
+    try:
+        response = supabase.table("clientes").select("nome").eq("id", cliente_id).single().execute()
+        if response.data and response.data.get("nome"):
+            return response.data["nome"]
+    except Exception:
+        pass
+    return None
+
+
+# FILTRO CUSTOMIZADO PARA FORMATAÇÃO DE DATAS NO JINJA2
+@app.template_filter('formatar_data')
+def formatar_data(valor):
+    """Formata uma string ISO 8601 (datetime) para 'dd/mm/yyyy às HH:MM'."""
+    if not valor:
+        return "N/A"
+    try:
+        from datetime import datetime
+        # Supabase geralmente retorna no formato ISO 8601 completo
+        dt = datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
+        return dt.strftime('%d/%m/%Y às %H:%M')
+    except (ValueError, TypeError):
+        return valor
+
 
 @login_manager.user_loader
 def load_user(user_id):
     response = supabase.table("usuarios").select("username, role").eq("username", user_id).single().execute()
-    if response.data: 
+    if response.data:
         return User(response.data['username'], response.data['role'])
     return None
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -91,92 +178,172 @@ def login():
                 login_user(User(user_data['username'], user_data['role']))
                 return redirect(url_for('index'))
 
-        flash("Usuário ou senha inválidos.")
+        flash("Usuário ou senha inválidos.", "danger")
     return render_template('login.html')
+
 
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    # CORREÇÃO AQUI: Agora incluímos o relacionamento com a tabela clientes
-    # O Supabase retornará o objeto de clientes dentro de cada item de agendamento
+    # CORREÇÃO: mantemos o relacionamento com a tabela clientes via Supabase.
+    # Adicionamos fallback de busca manual caso o relacionamento não retorne o nome.
     query = supabase.table("agendamentos").select("*, clientes(nome)")
- 
-    if current_user.role == 'tecnico': 
+
+    if current_user.role == 'tecnico':
         query = query.eq("tecnico", current_user.id)
-    elif current_user.role == 'vendedor': 
+    elif current_user.role == 'vendedor':
         query = query.eq("vendedor", current_user.id)
-        
+
     agenda = query.order("id", desc=True).execute().data
+
+    # Enriquece os itens da agenda com o nome do cliente caso o relacionamento falhe
+    for item in agenda:
+        if (not item.get('clientes') or not item['clientes'].get('nome')) and item.get('cliente'):
+            nome_cliente = cliente_nome_por_id(item['cliente'])
+            if nome_cliente:
+                item['clientes'] = {'nome': nome_cliente}
+
     clientes = supabase.table("clientes").select("*").execute().data
     tecnicos = supabase.table("usuarios").select("username").eq("role", "tecnico").execute().data
     vendedores = supabase.table("usuarios").select("username").eq("role", "vendedor").execute().data
-    
-    return render_template('index.html', 
-                           agenda=agenda, 
-                           clientes=clientes, 
-                           tecnicos=tecnicos, 
-                           vendedores=vendedores,
-                           role=current_user.role, 
-                           user=current_user)
+
+    return render_template(
+        'index.html',
+        agenda=agenda,
+        clientes=clientes,
+        tecnicos=tecnicos,
+        vendedores=vendedores,
+        role=current_user.role,
+        user=current_user
+    )
+
 
 @app.route('/cadastrar_cliente', methods=['POST'])
 @login_required
 def cadastrar_cliente():
-    if current_user.role in ['admin', 'vendedor']:
+    if current_user.role not in ['admin', 'vendedor']:
+        flash("Você não tem permissão para cadastrar clientes.", "danger")
+        return redirect(url_for('index'))
+
+    try:
+        nome = validar_texto_simples(request.form.get('nome'), "Nome", obrigatorio=True, tamanho_max=200)
+        telefone = validar_texto_simples(request.form.get('telefone'), "Telefone", obrigatorio=False, tamanho_max=30)
+        endereco = validar_texto_simples(request.form.get('endereco'), "Endereço", obrigatorio=False, tamanho_max=255)
+
         supabase.table("clientes").insert({
-            "nome": request.form.get('nome'),
-            "telefone": request.form.get('telefone'),
-            "endereco": request.form.get('endereco')
+            "nome": nome,
+            "telefone": telefone,
+            "endereco": endereco
         }).execute()
+
+        flash("Cliente cadastrado com sucesso!", "success")
+
+    except BadRequest as e:
+        flash(str(e), "danger")
+    except Exception as e:
+        app_logger.error(f"Erro ao cadastrar cliente: {e}")
+        flash("Ocorreu um erro ao cadastrar o cliente. Tente novamente.", "danger")
+
     return redirect(url_for('index'))
+
 
 @app.route('/agendar', methods=['POST'])
 @login_required
 def agendar():
-    if current_user.role in ['admin', 'vendedor']:
+    if current_user.role not in ['admin', 'vendedor']:
+        flash("Você não tem permissão para agendar ordens de serviço.", "danger")
+        return redirect(url_for('index'))
+
+    try:
+        cliente_id = validar_cliente_id(request.form.get('cliente_id'))
+        servico = validar_texto_simples(request.form.get('servico'), "Serviço", obrigatorio=True, tamanho_max=200)
+        horario = validar_texto_simples(request.form.get('horario'), "Data/Hora", obrigatorio=True, tamanho_max=30)
+        prioridade = validar_prioridade(request.form.get('prioridade'))
+        obs = validar_texto_simples(request.form.get('obs'), "Observação", obrigatorio=False, tamanho_max=500)
+        tecnico = request.form.get('tecnico')
+
+        if not tecnico:
+            raise BadRequest("O campo 'Técnico' é obrigatório.")
+
         vendedor_selecionado = request.form.get('vendedor') if current_user.role == 'admin' else current_user.id
-        
-        # Certifique-se de que cliente_id seja enviado como inteiro (int)
+
+        if current_user.role == 'admin':
+            if not vendedor_selecionado:
+                raise BadRequest("O campo 'Vendedor' é obrigatório para administradores.")
+
         res = supabase.table("agendamentos").insert({
-            "cliente": int(request.form.get('cliente_id')), 
-            "servico": request.form.get('servico'),
-            "horario": request.form.get('horario'),
-            "tecnico": request.form.get('tecnico'),
-            "prioridade": request.form.get('prioridade'),
-            "obs": request.form.get('obs'),
+            "cliente": cliente_id,
+            "servico": servico,
+            "horario": horario,
+            "tecnico": tecnico,
+            "prioridade": prioridade,
+            "obs": obs,
             "vendedor": vendedor_selecionado,
             "status": "Pendente"
         }).execute()
-        
+
         if res.data:
             registrar_log(res.data[0]['id'], "Criou nova OS")
+
+        flash("Ordem de serviço agendada com sucesso!", "success")
+
+    except BadRequest as e:
+        flash(str(e), "danger")
+    except Exception as e:
+        app_logger.error(f"Erro ao agendar OS: {e}")
+        flash("Ocorreu um erro ao agendar a ordem de serviço.", "danger")
+
     return redirect(url_for('index'))
+
 
 @app.route('/reagendar/<id>', methods=['POST'])
 @login_required
 def reagendar(id):
     item = get_os_ou_none(id)
     if not item or not usuario_pode_gerenciar(item):
-        flash("Você não tem permissão para reagendar esta OS.")
+        flash("Você não tem permissão para reagendar esta OS.", "danger")
         return redirect(url_for('index'))
 
-    nova_data = request.form.get('nova_data')
-    if nova_data:
+    try:
+        nova_data = validar_texto_simples(request.form.get('nova_data'), "Nova Data/Hora", obrigatorio=True, tamanho_max=30)
+
         supabase.table("agendamentos").update({"horario": nova_data, "status": "Reagendado"}).eq("id", id).execute()
         registrar_log(id, f"Reagendou para {nova_data}")
+        flash("OS reagendada com sucesso!", "success")
+
+    except BadRequest as e:
+        flash(str(e), "danger")
+    except Exception as e:
+        app_logger.error(f"Erro ao reagendar OS {id}: {e}")
+        flash("Ocorreu um erro ao reagendar a OS.", "danger")
+
     return redirect(url_for('index'))
+
 
 @app.route('/mudar_status/<id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
-    item = get_os_ou_none(id)
-    if not item or not usuario_pode_gerenciar(item):
-        flash("Você não tem permissão para alterar o status desta OS.")
+    # Validação básica do status recebido via URL
+    status_permitidos = {'Pendente', 'Em andamento', 'Concluído', 'Reagendado', 'Cancelado'}
+    if novo_status not in status_permitidos:
+        flash("Status informado não é válido.", "danger")
         return redirect(url_for('index'))
 
-    supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
-    registrar_log(id, f"Mudou status para {novo_status}")
+    item = get_os_ou_none(id)
+    if not item or not usuario_pode_gerenciar(item):
+        flash("Você não tem permissão para alterar o status desta OS.", "danger")
+        return redirect(url_for('index'))
+
+    try:
+        supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
+        registrar_log(id, f"Mudou status para {novo_status}")
+        flash(f"Status da OS atualizado para '{novo_status}'.", "success")
+    except Exception as e:
+        app_logger.error(f"Erro ao mudar status da OS {id}: {e}")
+        flash("Ocorreu um erro ao atualizar o status da OS.", "danger")
+
     return redirect(url_for('index'))
+
 
 @app.route('/cancelar/<id>')
 @login_required
@@ -184,26 +351,48 @@ def cancelar(id):
     item = get_os_ou_none(id)
     # Técnico não pode cancelar, apenas finalizar/reagendar suas próprias OS
     if not item or not usuario_pode_gerenciar(item, incluir_tecnico=False):
-        flash("Você não tem permissão para cancelar esta OS.")
+        flash("Você não tem permissão para cancelar esta OS.", "danger")
         return redirect(url_for('index'))
 
-    supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
-    registrar_log(id, "Cancelou OS")
+    try:
+        # Impede cancelar uma OS já concluída ou cancelada
+        if item.get("status") in ['Concluído', 'Cancelado']:
+            flash("Esta OS já está finalizada ou cancelada.", "warning")
+            return redirect(url_for('index'))
+
+        supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
+        registrar_log(id, "Cancelou OS")
+        flash("OS cancelada com sucesso!", "success")
+    except Exception as e:
+        app_logger.error(f"Erro ao cancelar OS {id}: {e}")
+        flash("Ocorreu um erro ao cancelar a OS.", "danger")
+
     return redirect(url_for('index'))
+
 
 @app.route('/logs')
 @login_required
 def logs():
     if current_user.role != 'admin':
-        flash("Apenas administradores podem acessar o histórico de logs.")
+        flash("Apenas administradores podem acessar o histórico de logs.", "danger")
         return redirect(url_for('index'))
-    logs = supabase.table("logs_os").select("*").order("data", desc=True).execute().data
-    return render_template('logs.html', logs=logs)
+
+    try:
+        logs_list = supabase.table("logs_os").select("*").order("data", desc=True).execute().data
+    except Exception as e:
+        app_logger.error(f"Erro ao carregar logs: {e}")
+        logs_list = []
+        flash("Ocorreu um erro ao carregar o histórico de logs.", "danger")
+
+    return render_template('logs.html', logs=logs_list)
+
 
 @app.route('/logout')
 def logout():
     logout_user()
+    flash("Você saiu do sistema com segurança.", "info")
     return redirect(url_for('login'))
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -3,30 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <title>Histórico de Logs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f7f7f7; }
-        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
-        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
         .back-link { display: inline-block; margin-bottom: 20px; color: #ff7a00; text-decoration: none; }
+        .logs-container { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
     <a href="/" class="back-link">← Voltar para o Sistema</a>
-    <h3>Histórico de Ações</h3>
-    <table>
-        <thead>
-            <tr><th>Data/Hora</th><th>Usuário</th><th>ID OS</th><th>Ação</th></tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-            <tr>
-                <td>{{ log.data.replace('T', ' ')[:16] }}</td>
-                <td>{{ log.usuario }}</td>
-                <td>{{ log.os_id }}</td>
-                <td>{{ log.acao }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+            <div class="card alert alert-{{ category }}" role="alert">
+              <p style="margin: 0;">{{ message }}</p>
+            </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="logs-container">
+        <h3>Histórico de Ações</h3>
+
+        {% if logs %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr><th>Data/Hora</th><th>Usuário</th><th>ID OS</th><th>Ação</th></tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            {% if log.data %}
+                                {{ log.data | formatar_data }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ log.usuario }}</td>
+                        <td>{{ log.os_id }}</td>
+                        <td>{{ log.acao }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p style="color: #666; text-align: center; padding: 20px;">Nenhum log registrado ainda.</p>
+        {% endif %}
+    </div>
 </body>
 </html>
