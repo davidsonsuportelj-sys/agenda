@@ -30,7 +30,7 @@
     <div class="card">
         <h3>Cadastrar Novo Cliente</h3>
         <form action="{{ url_for('cadastrar_cliente') }}" method="POST">
-            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="field-wrapper"><label>Nome</label><input type="text" name="nome" required maxlength="200"></div>
             <div class="field-wrapper"><label>Telefone</label><input type="text" name="telefone" maxlength="30"></div>
             <div class="field-wrapper"><label>Endereço</label><input type="text" name="endereco" maxlength="255"></div>
@@ -42,7 +42,7 @@
     <div class="card">
         <h3>Nova Ordem de Serviço</h3>
         <form action="{{ url_for('agendar') }}" method="POST">
-            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="field-wrapper">
                 <label>Cliente</label>
                 <select name="cliente_id" required>
@@ -118,7 +118,7 @@
                             <a href="{{ url_for('mudar_status', id=item.id, novo_status='Concluído') }}">Finalizar</a>
                             <a href="{{ url_for('cancelar', id=item.id) }}">Cancelar</a>
                             <form action="{{ url_for('reagendar', id=item.id) }}" method="POST">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="datetime-local" name="nova_data" required>
                                 <button type="submit" onclick="prevenirDuploSubmit(this)">Reagendar</button>
                             </form>
