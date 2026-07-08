@@ -1,8 +1,9 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash, abort
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from supabase import create_client
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
@@ -21,6 +22,28 @@ class User(UserMixin):
     def __init__(self, username, role):
         self.id = username
         self.role = role
+
+def get_os_ou_none(os_id):
+    """Busca uma OS pelo id. Retorna None se não existir."""
+    try:
+        response = supabase.table("agendamentos").select("*").eq("id", os_id).single().execute()
+        return response.data
+    except Exception:
+        return None
+
+def usuario_pode_gerenciar(item, incluir_tecnico=True):
+    """Regras de autorização para ações sobre uma OS:
+    - admin: sempre pode
+    - vendedor: só na OS que ele mesmo criou/vendeu
+    - tecnico: só na OS em que ele é o técnico designado (quando incluir_tecnico=True)
+    """
+    if current_user.role == 'admin':
+        return True
+    if current_user.role == 'vendedor' and item.get('vendedor') == current_user.id:
+        return True
+    if incluir_tecnico and current_user.role == 'tecnico' and item.get('tecnico') == current_user.id:
+        return True
+    return False
 
 def registrar_log(os_id, acao):
     try:
@@ -44,10 +67,31 @@ def login():
     if request.method == 'POST':
         user_in = request.form.get('username')
         pass_in = request.form.get('password')
-        response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
-        if response.data and response.data['password'] == pass_in:
-            login_user(User(response.data['username'], response.data['role']))
-            return redirect(url_for('index'))
+
+        try:
+            response = supabase.table("usuarios").select("*").eq("username", user_in).single().execute()
+            user_data = response.data
+        except Exception:
+            user_data = None
+
+        if user_data:
+            senha_armazenada = user_data.get('password', '')
+            senha_valida = False
+
+            if senha_armazenada.startswith(('pbkdf2:', 'scrypt:')):
+                # Senha já está no formato hash (fluxo normal)
+                senha_valida = check_password_hash(senha_armazenada, pass_in)
+            elif senha_armazenada == pass_in:
+                # Senha legada em texto puro: valida e migra para hash automaticamente
+                senha_valida = True
+                novo_hash = generate_password_hash(pass_in)
+                supabase.table("usuarios").update({"password": novo_hash}).eq("username", user_in).execute()
+
+            if senha_valida:
+                login_user(User(user_data['username'], user_data['role']))
+                return redirect(url_for('index'))
+
+        flash("Usuário ou senha inválidos.")
     return render_template('login.html')
 
 @app.route('/', methods=['GET', 'POST'])
@@ -111,6 +155,11 @@ def agendar():
 @app.route('/reagendar/<id>', methods=['POST'])
 @login_required
 def reagendar(id):
+    item = get_os_ou_none(id)
+    if not item or not usuario_pode_gerenciar(item):
+        flash("Você não tem permissão para reagendar esta OS.")
+        return redirect(url_for('index'))
+
     nova_data = request.form.get('nova_data')
     if nova_data:
         supabase.table("agendamentos").update({"horario": nova_data, "status": "Reagendado"}).eq("id", id).execute()
@@ -120,6 +169,11 @@ def reagendar(id):
 @app.route('/mudar_status/<id>/<novo_status>')
 @login_required
 def mudar_status(id, novo_status):
+    item = get_os_ou_none(id)
+    if not item or not usuario_pode_gerenciar(item):
+        flash("Você não tem permissão para alterar o status desta OS.")
+        return redirect(url_for('index'))
+
     supabase.table("agendamentos").update({"status": novo_status}).eq("id", id).execute()
     registrar_log(id, f"Mudou status para {novo_status}")
     return redirect(url_for('index'))
@@ -127,9 +181,24 @@ def mudar_status(id, novo_status):
 @app.route('/cancelar/<id>')
 @login_required
 def cancelar(id):
+    item = get_os_ou_none(id)
+    # Técnico não pode cancelar, apenas finalizar/reagendar suas próprias OS
+    if not item or not usuario_pode_gerenciar(item, incluir_tecnico=False):
+        flash("Você não tem permissão para cancelar esta OS.")
+        return redirect(url_for('index'))
+
     supabase.table("agendamentos").update({"status": "Cancelado"}).eq("id", id).execute()
     registrar_log(id, "Cancelou OS")
     return redirect(url_for('index'))
+
+@app.route('/logs')
+@login_required
+def logs():
+    if current_user.role != 'admin':
+        flash("Apenas administradores podem acessar o histórico de logs.")
+        return redirect(url_for('index'))
+    logs = supabase.table("logs_os").select("*").order("data", desc=True).execute().data
+    return render_template('logs.html', logs=logs)
 
 @app.route('/logout')
 def logout():

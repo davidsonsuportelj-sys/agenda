@@ -10,8 +10,22 @@
 
     <div class="header">
         <h1>Agenda de Serviços</h1>
-        <div>Bem-vindo, <strong>{{ user.id }}</strong> | <a href="{{ url_for('logout') }}">Sair</a></div>
+        <div>
+            Bem-vindo, <strong>{{ user.id }}</strong>
+            {% if role == 'admin' %} | <a href="{{ url_for('logs') }}">Ver Logs</a>{% endif %}
+            | <a href="{{ url_for('logout') }}">Sair</a>
+        </div>
     </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card" style="border-left: 4px solid #dc2626;">
+          {% for message in messages %}
+            <p style="color: #dc2626; margin: 0;">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
     <div class="card">
         <h3>Cadastrar Novo Cliente</h3>
